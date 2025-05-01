@@ -1,0 +1,1863 @@
+All AI codes
+
+Implement Non-AI Techniques for the following problems: 
+A. Tic Tac Toe 
+def print_boards(game_board, ref_board):
+    """Prints the game board and reference board."""
+    print("Game Board:")
+    for row in game_board:
+        print(" | ".join(row))
+        print("-" * 9)
+    print("\nReference Board:")
+    for row in ref_board:
+        print(" | ".join(row))
+        print("-" * 9)
+ 
+def check_winner(board):
+    """Checks if there's a winner."""
+ 
+    for row in board:
+        if row[0] == row[1] == row[2] != " ":
+            return row[0]
+    for col in range(3):
+        if board[0][col] == board[1][col] == board[2][col] != " ":
+            return board[0][col]
+    if board[0][0] == board[1][1] == board[2][2] != " ":
+        return board[0][0]
+    if board[0][2] == board[1][1] == board[2][0] != " ":
+        return board[0][2]
+    return None
+ 
+def is_full(board):
+    """Checks if the board is full."""
+    return all(cell != " " for row in board for cell in row)
+ 
+def main():
+    """Main function to play the game."""
+ 
+    ref_board = [["A", "B", "C"],
+                 ["D", "E", "F"],
+                 ["G", "H", "I"]]
+    game_board = [[" " for _ in range(3)] for _ in range(3)]
+ 
+    position_map = {ref_board[row][col]: (row, col) for row in range(3) for col in
+range(3)}
+    current_player = "X"
+ 
+    print("Welcome to Tic Tac Toe!")
+    print("Use the letters A to I to choose your position.")
+    print_boards(game_board, ref_board)
+ 
+    while True:
+ 
+        try:
+            print(f"Player {current_player}, it's your turn.")
+            position = input("Enter the position (A-I): ").upper()
+ 
+            if position not in position_map:
+                print("Invalid position! Use letters A to I.")
+                continue
+ 
+            row, col = position_map[position]
+            if game_board[row][col] != " ":
+                print("Cell is already occupied! Try again.")
+                continue
+        except Exception as e:
+            print("An error occurred. Please try again.")
+            continue
+ 
+        game_board[row][col] = current_player
+        ref_board[row][col] = " "  
+        print_boards(game_board, ref_board)
+ 
+        winner = check_winner(game_board)
+        if winner:
+            print(f"Player {winner} wins!")
+            break
+ 
+        if is_full(game_board):
+            print("It's a draw!")
+            break
+ 
+        current_player = "O" if current_player == "X" else "X"
+ 
+if __name__ == "__main__":
+    main()
+B. N Queens 
+def is_safe(board, row, col, n):
+    """Check if placing a queen at (row, col) is safe."""
+ 
+    for i in range(row):
+        if board[i][col] == "Q":
+            return False
+    for i, j in zip(range(row, -1, -1), range(col, -1, -1)):
+        if board[i][j] == "Q":
+            return False
+    for i, j in zip(range(row, -1, -1), range(col, n)):
+        if board[i][j] == "Q":
+            return False
+ 
+    return True
+ 
+def solve_n_queens(board, row, n, solutions):
+    """Recursively solve the N-Queens problem."""
+    if row == n:
+ 
+        solutions.append(["".join(row) for row in board])
+        return
+ 
+    for col in range(n):
+        if is_safe(board, row, col, n):
+ 
+            board[row][col] = "Q"
+ 
+            solve_n_queens(board, row + 1, n, solutions)
+ 
+            board[row][col] = "."
+ 
+def n_queens(n):
+    """Solve the N-Queens problem and return all solutions."""
+    board = [["." for _ in range(n)] for _ in range(n)]
+    solutions = []
+    solve_n_queens(board, 0, n, solutions)
+    return solutions
+ 
+n = 5
+solutions = n_queens(n)
+print(f"Total solutions for {n}x{n} board: {len(solutions)}\n")
+for idx, solution in enumerate(solutions, start=1):
+    print(f"Solution {idx}:")
+    for row in solution:
+        print(row)
+    print()
+C. Magic square 
+def generate_magic_square(n):
+    """Generate an n x n magic square (only for odd n)."""
+    if n % 2 == 0:
+        print("Magic squares can only be generated for odd numbers.")
+        return None
+
+
+    magic_square = [[0] * n for _ in range(n)]
+    i, j = 0, n // 2  # Start from the middle of the first row
+
+
+    for num in range(1, n * n + 1):
+        magic_square[i][j] = num  # Place the current number
+
+
+        # Calculate the next position
+        new_i, new_j = (i - 1) % n, (j + 1) % n
+
+
+        if magic_square[new_i][new_j] != 0:  # If the cell is already filled
+            i += 1  # Move down instead
+        else:
+            i, j = new_i, new_j
+
+
+    return magic_square
+
+
+def print_magic_square(magic_square):
+    """Print the magic square."""
+    if magic_square:
+        for row in magic_square:
+            print(" ".join(f"{num:2}" for num in row))
+        print()
+
+
+def calculate_magic_sum(n):
+    """Calculate the magic sum for an n x n magic square."""
+    return n * (n * n + 1) // 2
+
+
+def main():
+    """Main function to generate a 3x3 or 5x5 magic square."""
+    choice = input("Enter the size of the magic square (3 or 5): ").strip()
+    if choice not in {"3", "5"}:
+        print("Invalid choice. Please enter 3 or 5.")
+        return
+
+
+    n = int(choice)
+    print(f"Generating a {n}x{n} magic square...")
+    magic_square = generate_magic_square(n)
+
+
+    if magic_square:
+        magic_sum = calculate_magic_sum(n)
+        print(f"{n}x{n} Magic Square:")
+        print_magic_square(magic_square)
+        print(f"The magic sum for a {n}x{n} magic square is: {magic_sum}")
+    else:
+        print("Failed to generate magic square.")
+
+
+if __name__ == "__main__":
+    main()
+
+—---------------------------------------------------------------------------------------------
+
+Implement the Water Jug problem using the following uninformed search strategies: 
+a. Depth First Search 
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+
+
+typedef struct State {
+    int jug1;
+    int jug2;
+} State;
+
+
+bool isGoalState(State state, int goal) {
+    return state.jug1 == goal || state.jug2 == goal;
+}
+
+
+void printState(State state) {
+    printf("(%d, %d)\n", state.jug1, state.jug2);
+}
+
+
+void DFS(int capacity1, int capacity2, int goal) {
+    printf("\nDFS Solution:\n");
+    State stack[100];
+    int top = -1;
+
+
+    bool visited[capacity1 + 1][capacity2 + 1];
+    for (int i = 0; i <= capacity1; i++) {
+        for (int j = 0; j <= capacity2; j++) {
+            visited[i][j] = false;
+        }
+    }
+
+
+    State start = {0, 0};
+    stack[++top] = start;
+
+
+    while (top >= 0) {
+        State current = stack[top--];
+
+
+        if (visited[current.jug1][current.jug2]) {
+            continue;
+        }
+
+
+        visited[current.jug1][current.jug2] = true;
+        printState(current);
+
+
+        if (isGoalState(current, goal)) {
+            printf("Goal state reached!\n");
+            return;
+        }
+
+
+        State successors[] = {
+            {capacity1, current.jug2},
+            {current.jug1, capacity2},
+            {0, current.jug2},
+            {current.jug1, 0},
+            {current.jug1 - (capacity2 - current.jug2) >= 0 ? current.jug1 - (capacity2 - current.jug2) : 0,
+             current.jug1 + current.jug2 <= capacity2 ? current.jug1 + current.jug2 : capacity2},
+            {current.jug1 + current.jug2 <= capacity1 ? current.jug1 + current.jug2 : capacity1,
+             current.jug2 - (capacity1 - current.jug1) >= 0 ? current.jug2 - (capacity1 - current.jug1) : 0}
+        };
+
+
+        for (int i = 0; i < 6; i++) {
+            State next = successors[i];
+            if (!visited[next.jug1][next.jug2]) {
+                stack[++top] = next;
+            }
+        }
+    }
+
+
+    printf("No solution found!\n");
+}
+
+
+int main() {
+    int capacity1, capacity2, goal;
+
+
+    printf("Enter capacity of jug1: ");
+    scanf("%d", &capacity1);
+    printf("Enter capacity of jug2: ");
+    scanf("%d", &capacity2);
+    printf("Enter the goal amount: ");
+    scanf("%d", &goal);
+
+
+    DFS(capacity1, capacity2, goal);
+    return 0;
+}
+
+
+b. Breadth First Search
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+
+
+typedef struct State {
+    int jug1;
+    int jug2;
+} State;
+
+
+bool isGoalState(State state, int goal) {
+    return state.jug1 == goal || state.jug2 == goal;
+}
+
+
+void printState(State state) {
+    printf("(%d, %d)\n", state.jug1, state.jug2);
+}
+
+
+void BFS(int capacity1, int capacity2, int goal) {
+    printf("\nBFS Solution:\n");
+    State queue[100];
+    int front = 0, rear = 0;
+
+
+    bool visited[capacity1 + 1][capacity2 + 1];
+    for (int i = 0; i <= capacity1; i++) {
+        for (int j = 0; j <= capacity2; j++) {
+            visited[i][j] = false;
+        }
+    }
+
+
+    State start = {0, 0};
+    queue[rear++] = start;
+
+
+    while (front < rear) {
+        State current = queue[front++];
+
+
+        if (visited[current.jug1][current.jug2]) {
+            continue;
+        }
+
+
+        visited[current.jug1][current.jug2] = true;
+        printState(current);
+
+
+        if (isGoalState(current, goal)) {
+            printf("Goal state reached!\n");
+            return;
+        }
+
+
+        State successors[] = {
+            {capacity1, current.jug2},
+            {current.jug1, capacity2},
+            {0, current.jug2},
+            {current.jug1, 0},
+            {current.jug1 - (capacity2 - current.jug2) >= 0 ? current.jug1 - (capacity2 - current.jug2) : 0,
+             current.jug1 + current.jug2 <= capacity2 ? current.jug1 + current.jug2 : capacity2},
+            {current.jug1 + current.jug2 <= capacity1 ? current.jug1 + current.jug2 : capacity1,
+             current.jug2 - (capacity1 - current.jug1) >= 0 ? current.jug2 - (capacity1 - current.jug1) : 0}
+        };
+
+
+        for (int i = 0; i < 6; i++) {
+            State next = successors[i];
+            if (!visited[next.jug1][next.jug2]) {
+                queue[rear++] = next;
+            }
+        }
+    }
+
+
+    printf("No solution found!\n");
+}
+
+
+int main() {
+    int capacity1, capacity2, goal;
+
+
+    printf("Enter capacity of jug1: ");
+    scanf("%d", &capacity1);
+    printf("Enter capacity of jug2: ");
+    scanf("%d", &capacity2);
+    printf("Enter the goal amount: ");
+    scanf("%d", &goal);
+
+
+    BFS(capacity1, capacity2, goal);
+    return 0;
+}
+
+
+
+
+—--------------------------—--------------------------—--------------------------—--------------------------
+
+3. Implement the Hill Climbing technique to solve the 8 puzzle problem. 
+import random
+
+
+# Define the goal state
+goal_state = [
+    [1, 2, 3],
+    [4, 5, 0],
+    [7, 8, 6]
+]
+
+
+# Function to find the position of the blank tile (0)
+def find_blank(state):
+    for i in range(3):
+        for j in range(3):
+            if state[i][j] == 0:
+                return i, j
+    return -1, -1
+
+
+# Function to check if a state is the goal state
+def is_goal_state(state):
+    return state == goal_state
+
+
+# Function to generate neighbors by moving the blank tile
+def generate_neighbors(state):
+    neighbors = []
+    i, j = find_blank(state)
+   
+    # Define possible moves
+    moves = [(-1, 0), (1, 0), (0, -1), (0, 1)]  # up, down, left, right
+   
+    for move in moves:
+        ni, nj = i + move[0], j + move[1]
+        if 0 <= ni < 3 and 0 <= nj < 3:
+            new_state = [row[:] for row in state]  # Create a copy of the state
+            new_state[i][j], new_state[ni][nj] = new_state[ni][nj], new_state[i][j]  # Swap the blank tile with the neighbor
+            neighbors.append(new_state)
+   
+    return neighbors
+
+
+# Function to calculate the heuristic (misplaced tiles)
+def heuristic(state):
+    misplaced = 0
+    for i in range(3):
+        for j in range(3):
+            if state[i][j] != goal_state[i][j] and state[i][j] != 0:
+                misplaced += 1
+    return misplaced
+
+
+# Hill Climbing Algorithm
+def hill_climbing(initial_state):
+    current_state = initial_state
+    while True:
+        if is_goal_state(current_state):
+            return current_state
+       
+        neighbors = generate_neighbors(current_state)
+        best_neighbor = None
+        best_heuristic = float('inf')
+       
+        for neighbor in neighbors:
+            h = heuristic(neighbor)
+            if h < best_heuristic:
+                best_heuristic = h
+                best_neighbor = neighbor
+       
+        # If no improvement is found, we are stuck
+        if best_heuristic >= heuristic(current_state):
+            return None
+       
+        current_state = best_neighbor
+
+
+# Example Usage
+initial_state = [
+    [1, 2, 3],
+    [4, 5, 6],
+    [7, 8, 0]
+]
+
+
+solution = hill_climbing(initial_state)
+if solution:
+    print("Goal reached!")
+    for row in solution:
+        print(row)
+else:
+    print("No solution found (stuck in local minima).")
+
+
+
+
+
+—--------------------------—--------------------------—--------------------------—--------------------------
+4 Implement the Best First Search to solve the following problems: 
+    a. 8 puzzle  
+from queue import PriorityQueue
+
+
+goal = [[1, 2, 3], [4, 5, 6], [7, 8, 0]]
+
+
+def get_input():
+    print("Enter the 3x3 puzzle (0 for blank):")
+    board = [list(map(int, input(f"Row {i+1}: ").split())) for i in range(3)]
+    return board if set(sum(board, [])) == set(range(9)) else get_input()
+
+
+def misplaced_tiles(board):
+    return sum(board[i][j] and board[i][j] != goal[i][j] for i in range(3) for j in range(3))
+
+
+def get_moves(board):
+    x, y = next((i, j) for i in range(3) for j in range(3) if board[i][j] == 0)
+    moves = []
+   
+    for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+        if 0 <= x + dx < 3 and 0 <= y + dy < 3:
+            new_board = [row[:] for row in board]
+            new_board[x][y], new_board[x+dx][y+dy] = new_board[x+dx][y+dy], new_board[x][y]
+            moves.append(new_board)
+   
+    return moves
+
+
+def best_first_search(start):
+    pq, visited = PriorityQueue(), set()
+    pq.put((misplaced_tiles(start), start, []))
+   
+    while not pq.empty():
+        _, board, path = pq.get()
+
+
+        if board == goal:
+            return path + [goal]
+
+
+        board_tuple = tuple(map(tuple, board))
+        if board_tuple in visited:
+            continue
+       
+        visited.add(board_tuple)
+       
+        for move in get_moves(board):
+            if tuple(map(tuple, move)) not in visited:
+                pq.put((misplaced_tiles(move), move, path + [board]))
+
+
+    return None
+
+
+# Run the algorithm
+initial_state = get_input()
+solution = best_first_search(initial_state)
+
+
+if solution:
+    for step in solution:
+        for row in step:
+            print(row)
+        print()
+else:
+    print("No solution found.")
+
+
+    b. Robot Navigation problem 
+from collections import defaultdict
+from queue import PriorityQueue
+
+
+def heuristic(node, goal):
+    """
+    Heuristic function to estimate the distance from the current node to the goal.
+    For simplicity, we'll use the difference in alphabetical position.
+    """
+    return abs(ord(node[0]) - ord(goal[0]))
+
+
+def best_first_search(graph, start, end):
+    # Priority queue to store the frontier nodes (priority, node, distance)
+    frontier = PriorityQueue()
+    frontier.put((heuristic(start, end), start, 0))  # Initial node with heuristic priority and distance 0
+   
+    visited = set()  # Set to track visited nodes
+    visited.add(start)  # Mark the start node as visited
+   
+    while not frontier.empty():
+        current_priority, current_city, current_distance = frontier.get()  # Get the node with the highest priority
+       
+        if current_city == end:  # Check if the current node is the goal
+            return current_distance  # Return the distance to the goal
+       
+        for neighbor, neighbor_distance in graph[current_city]:  # Explore neighbors of the current node
+            if neighbor not in visited:  # Check if the neighbor is not visited
+                visited.add(neighbor)  # Mark the neighbor as visited
+                new_distance = current_distance + neighbor_distance  # Calculate the new distance to the neighbor
+                # Add the neighbor to the frontier with its heuristic priority and updated distance
+                frontier.put((heuristic(neighbor, end), neighbor, new_distance))
+   
+    return -1  # Return -1 if no path is found
+
+
+def dijkstra(graph, start, end):
+    # Priority queue to store (distance, node)
+    pq = PriorityQueue()
+    pq.put((0, start))
+   
+    # Dictionary to store distances
+    distances = {start: 0}
+   
+    while not pq.empty():
+        current_distance, current_city = pq.get()
+       
+        if current_city == end:
+            return current_distance
+           
+        # If we've found a longer path, skip
+        if current_distance > distances[current_city]:
+            continue
+           
+        for neighbor, weight in graph[current_city]:
+            distance = current_distance + weight
+           
+            # Only update distance if it's shorter than what we've found
+            if neighbor not in distances or distance < distances[neighbor]:
+                distances[neighbor] = distance
+                pq.put((distance, neighbor))
+               
+    return -1
+
+
+def create_graph():
+    graph = defaultdict(list)  # Use defaultdict to initialize an empty list for new keys
+    num_edges = int(input("Enter the number of connections between cities: "))  # Get the number of connections
+    print("Enter the connections in the format: City1 City2 Distance")
+   
+    for _ in range(num_edges):
+        city1, city2, distance = input().split()  # Input format: City1 City2 Distance
+        distance = int(distance)  # Convert distance to integer
+        graph[city1].append((city2, distance))  # Add the connection from city1 to city2 with the distance
+        graph[city2].append((city1, distance))  # Add the connection from city2 to city1 with the distance (undirected graph)
+   
+    return graph  # Return the graph as an adjacency list
+
+
+if __name__ == "__main__":
+    graph = create_graph()  # Create the graph from user input
+    start_city = input("Enter the start city: ").strip()  # Get the start city from the user
+    end_city = input("Enter the end city: ").strip()  # Get the end city from the user
+   
+    shortest_distance = dijkstra(graph, start_city, end_city)  # Find the shortest distance using Dijkstra's algorithm
+   
+    if shortest_distance != -1:
+        print(f"The shortest distance between {start_city} and {end_city} is {shortest_distance} units.")
+    else:
+        print(f"There is no path between {start_city} and {end_city}.")
+
+
+Enter the number of connections between cities: 4
+Enter the connections in the format: City1 City2 Distance
+A B 1
+A D 6
+A B 1
+A D 6
+A D 6
+B C 2
+C D 1
+C D 1
+Enter the start city: A
+Enter the end city: D
+The shortest distance between A and D is 4 units.
+
+    c. Cities Distance (shortest path) problem
+from queue import PriorityQueue
+
+
+# Directions for moving up, down, left, right
+directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+
+
+# Function to check if the move is valid
+def is_valid_move(grid, visited, row, col):
+    """
+    Check if the move is within grid bounds, not an obstacle, and not already visited.
+    """
+    return 0 <= row < len(grid) and 0 <= col < len(grid[0]) and grid[row][col] != '#' and not visited[row][col]
+
+
+# Heuristic function for the Best-First Search
+def heuristic(current, goal):
+    """
+    Calculate the Manhattan distance heuristic between the current position and the goal.
+    """
+    return abs(current[0] - goal[0]) + abs(current[1] - goal[1])
+
+
+# Best-First Search algorithm
+def best_first_search(grid, start, goal):
+    """
+    Perform the Best-First Search algorithm on the grid from start to goal.
+    """
+    rows, cols = len(grid), len(grid[0])  # Dimensions of the grid
+    visited = [[False] * cols for _ in range(rows)]  # Keep track of visited nodes
+    frontier = PriorityQueue()  # Priority queue to store the frontier nodes
+    frontier.put((0, start))  # Add the start node to the frontier with priority 0
+    came_from = {}  # Dictionary to reconstruct the path
+   
+    while not frontier.empty():
+        _, current = frontier.get()  # Get the node with the highest priority (lowest heuristic value)
+       
+        if current == goal:
+            # If we reached the goal, reconstruct the path
+            path = []
+            while current in came_from:
+                path.append(current)
+                current = came_from[current]
+            path.append(start)
+            path.reverse()  # Reverse the path to get it from start to goal
+            return path
+       
+        visited[current[0]][current[1]] = True  # Mark the current node as visited
+       
+        for dr, dc in directions:
+            new_row, new_col = current[0] + dr, current[1] + dc
+           
+            if is_valid_move(grid, visited, new_row, new_col):
+                new_cost = heuristic((new_row, new_col), goal)  # Calculate heuristic cost for the new node
+                frontier.put((new_cost, (new_row, new_col)))  # Add the new node to the frontier with its heuristic cost
+                visited[new_row][new_col] = True  # Mark the new node as visited
+                came_from[(new_row, new_col)] = current  # Keep track of the path
+   
+    return None  # Return None if the goal is unreachable
+
+
+# Input for grid dimensions
+rows = int(input("Enter number of rows: "))
+cols = int(input("Enter number of columns: "))
+
+
+# Input for grid elements
+print("Enter the grid elements (use '.' for empty cell, '#' for obstacle):")
+grid = [input().split() for _ in range(rows)]
+
+
+# Input for start and goal positions
+start = tuple(map(int, input("Enter start position (row col): ").split()))
+goal = tuple(map(int, input("Enter goal position (row col): ").split()))
+
+
+# Check if start and goal positions are within grid bounds
+if not is_valid_move(grid, [[False] * cols for _ in range(rows)], start[0], start[1]) or \
+   not is_valid_move(grid, [[False] * cols for _ in range(rows)], goal[0], goal[1]):
+    print("Invalid start or goal position")
+else:
+    # Perform the search
+    path = best_first_search(grid, start, goal)
+    if path:
+        print("Path found:")
+        for node in path:
+            print(node)
+    else:
+        print("Goal is unreachable")
+
+
+Enter number of rows: 5
+Enter number of columns: 5
+Enter the grid elements (use '.' for empty cell, '#' for obstacle):
+. . . # .
+. . # . .
+# . . . .
+. . . . #
+. . . . #
+Enter start position (row col): 0 0
+Enter goal position (row col): 4 0
+Path found:
+(0, 0)
+(1, 0)
+(1, 1)
+(2, 1)
+(3, 1)
+(3, 0)
+(4, 0)
+PS C:\Users\hp\Documents\SEM 6\AI\Lab\Assignment 5>
+—--------------------------—--------------------------—--------------------------—--------------------------
+5 Implement the A* algorithm to solve the following problems: 
+    a. 8 puzzle  
+from copy import deepcopy
+from queue import PriorityQueue
+import math
+import tkinter as tk
+from tkinter import ttk
+import time
+
+
+class Node(object):
+    '''NODE OF PUZZLE STATE TREE'''
+    def __init__(self, state, parent, operation, depth, cost):
+        self.state = state
+        self.parent = parent
+        self.operation = operation
+        self.depth = depth
+        self.cost = cost
+
+
+    def __eq__(self, other):
+        return self.cost == other.cost
+
+
+    def __ne__(self, other):
+        return self.cost != other.cost
+
+
+    def __lt__(self, other):
+        return self.cost < other.cost
+
+
+    def __le__(self, other):
+        return self.cost <= other.cost
+
+
+    def __gt__(self, other):
+        return self.cost > other.cost
+
+
+    def __ge__(self, other):
+        return self.cost >= other.cost
+
+
+SIZE = 0
+DIRECTIONS = ['UP', 'DOWN', 'LEFT', 'RIGHT']
+MOVES = {'UP':[-1, 0], 'LEFT':[0, -1], 'RIGHT':[0, 1], 'DOWN':[1, 0]}
+
+
+class Puzzle(object):
+    '''GENERALIZED PUZZLE'''
+    def __init__(self, start, goal):
+        self.start = start
+        self.goal = goal
+        self.moves = []
+        global SIZE
+        SIZE = len(goal)
+
+
+    @staticmethod
+    def get_blank_position(state):
+        '''RETURNS THE BLANK POSITION IN THE BOARD'''
+        for row_index, row in enumerate(state):
+            if 0 in row:
+                return (row_index, row.index(0))
+
+
+    @staticmethod
+    def move(direction, state):
+        '''MOVES FROM ONE STATE TO NEXT STATE'''
+        blank = Puzzle.get_blank_position(state)
+        new_state = deepcopy(state)
+        old_x, old_y = blank[0], blank[1]
+        new_x, new_y = old_x + MOVES[direction][0], old_y + MOVES[direction][1]
+        if new_x < SIZE and new_x >= 0 and new_y < SIZE and new_y >= 0:
+            new_state[old_x][old_y], new_state[new_x][new_y] = new_state[new_x][new_y], new_state[old_x][old_y]
+            return new_state
+
+
+    @staticmethod
+    def get_state_tuple(state):
+        '''RETURNS STATE IN TUPLE FORM'''
+        return tuple([tuple(row) for row in state])
+
+
+    @staticmethod
+    def expand_node(node, visited):
+        """Returns a list of expanded nodes"""
+        expanded_nodes = []
+        for direction in DIRECTIONS:
+            new_state = Puzzle.move(direction, node.state)
+            expanded_nodes.append(Node(new_state, node, direction, node.depth + 1, 0))
+        # Filter the list and remove the nodes that are impossible (move function returned None)
+        expanded_nodes = [node for node in expanded_nodes if node.state != None and Puzzle.get_state_tuple(node.state) not in visited] #list comprehension!
+        return expanded_nodes
+
+
+    def mismatch(self, state):
+        '''HEURISTIC FUNCTION BASED ON THE NUMBER OF MISMATCHED TILES'''
+        return sum(1 for i in range(SIZE)\
+                for j in range(SIZE) if state[i][j] != self.goal[i][j])
+
+
+    @staticmethod
+    def get_row_index(tile):
+        return tile // SIZE  # Changed from / to //
+
+
+    @staticmethod
+    def get_column_index(tile):
+        return tile % SIZE
+
+
+    def manhattan(self, state):
+        return sum(abs(self.get_row_index(state[i][j]) - i)
+              + abs(self.get_column_index(state[i][j]) - j)
+              for j in range(SIZE)
+              for i in range(SIZE))
+
+
+    def heuristic(self, node):
+        return node.depth + self.manhattan(node.state) + math.sqrt(self.mismatch(node.state))
+
+
+    def a_star(self):
+        '''START TO GOAL OF PUZZLE USING A-STAR SEARCH'''
+        start_node = Node(self.start, None, None, 0, 0)
+        start_node.cost = self.heuristic(start_node)
+        priority_queue = PriorityQueue()
+        priority_queue.put(start_node)
+        visited = {}
+        visited[Puzzle.get_state_tuple(self.start)] = 1
+        while not priority_queue.empty():
+            node = priority_queue.get()
+            if node.state == self.goal:
+                self.moves, temp = [], node
+                while True:
+                    if temp.parent is None:
+                        break
+                    self.moves.insert(0, temp.operation)
+                    temp = temp.parent
+                return
+            expansion = Puzzle.expand_node(node, visited)
+            for node in expansion:
+                visited[Puzzle.get_state_tuple(node.state)] = 1
+                node.cost = self.heuristic(node)
+                priority_queue.put(node)
+        self.moves = None
+
+
+class PuzzleGUI:
+    def __init__(self, root, puzzle):
+        self.root = root
+        self.puzzle = puzzle
+        self.buttons = []
+        self.setup_gui()
+       
+    def setup_gui(self):
+        self.root.title("N-Puzzle Solver")
+        self.frame = ttk.Frame(self.root, padding="10")
+        self.frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+       
+        # Create grid of buttons
+        for i in range(SIZE):
+            row = []
+            for j in range(SIZE):
+                button = ttk.Button(self.frame, text=str(self.puzzle.start[i][j]), width=5)
+                button.grid(row=i, column=j, padx=2, pady=2)
+                row.append(button)
+            self.buttons.append(row)
+           
+        # Add Solve button
+        self.solve_button = ttk.Button(self.frame, text="Solve", command=self.solve)
+        self.solve_button.grid(row=SIZE, column=0, columnspan=SIZE, pady=10)
+       
+    def update_board(self, state):
+        for i in range(SIZE):
+            for j in range(SIZE):
+                self.buttons[i][j]['text'] = str(state[i][j]) if state[i][j] != 0 else " "
+        self.root.update()
+       
+    def solve(self):
+        self.solve_button['state'] = 'disabled'
+        self.puzzle.a_star()
+        if self.puzzle.moves:
+            current_state = deepcopy(self.puzzle.start)
+            for move in self.puzzle.moves:
+                current_state = Puzzle.move(move, current_state)
+                self.update_board(current_state)
+                time.sleep(0.5)  # Add delay between moves
+        self.solve_button['state'] = 'normal'
+
+
+def main():
+    initial_board = [
+        [1, 2, 3],
+        [4, 0, 5],
+        [6, 7, 8]
+    ]
+   
+    goal_board = [
+        [1, 2, 3],
+        [4, 5, 6],
+        [7, 8, 0]
+    ]
+   
+    puzzle = Puzzle(initial_board, goal_board)
+   
+    root = tk.Tk()
+    gui = PuzzleGUI(root, puzzle)
+    root.mainloop()
+
+
+if __name__ == '__main__':
+    main()
+
+
+
+    b. Robot Navigation problem 
+import heapq
+
+
+class Node:
+    def __init__(self, position, parent=None, g=0, h=0):
+        self.position = position  # (x, y)
+        self.parent = parent
+        self.g = g  # Cost from start to current node
+        self.h = h  # Heuristic cost to goal
+        self.f = g + h  # Total cost
+
+
+    def __lt__(self, other):
+        return self.f < other.f
+
+
+def heuristic(a, b):
+    # Manhattan distance
+    return abs(a[0] - b[0]) + abs(a[1] - b[1])
+
+
+def astar(grid, start, goal):
+    open_set = []
+    start_node = Node(start, None, 0, heuristic(start, goal))
+    heapq.heappush(open_set, start_node)
+   
+    closed_set = set()
+    directions = [(-1,0), (1,0), (0,-1), (0,1)]  # Up, Down, Left, Right
+
+
+    while open_set:
+        current = heapq.heappop(open_set)
+
+
+        if current.position == goal:
+            path = []
+            while current:
+                path.append(current.position)
+                current = current.parent
+            return path[::-1]  # reverse path
+
+
+        closed_set.add(current.position)
+
+
+        for dx, dy in directions:
+            neighbor_pos = (current.position[0] + dx, current.position[1] + dy)
+
+
+            if (0 <= neighbor_pos[0] < len(grid) and
+                0 <= neighbor_pos[1] < len(grid[0]) and
+                grid[neighbor_pos[0]][neighbor_pos[1]] == 0 and
+                neighbor_pos not in closed_set):
+               
+                g_cost = current.g + 1
+                h_cost = heuristic(neighbor_pos, goal)
+                neighbor_node = Node(neighbor_pos, current, g_cost, h_cost)
+                heapq.heappush(open_set, neighbor_node)
+
+
+    return None  # No path found
+
+
+# Example usage:
+grid = [
+    [0, 1, 0, 0, 0],
+    [0, 1, 0, 1, 0],
+    [0, 0, 0, 1, 0],
+    [0, 1, 1, 0, 0],
+    [0, 0, 0, 0, 0]
+]
+
+
+start = (0, 0)
+goal = (4, 4)
+
+
+path = astar(grid, start, goal)
+
+
+if path:
+    print("Path found:", path)
+else:
+    print("No path found.")
+
+
+
+    c. Cities Distance (shortest path) problem
+import math
+import heapq
+import matplotlib.pyplot as plt
+
+
+# Dictionary of nodes with their coordinates (x, y)
+nodes = {
+    'A': (0, 0),
+    'B': (2, 4),
+    'C': (5, 2),
+    'D': (1, 6),
+    'E': (6, 5),
+    'F': (4, 7)
+}
+
+
+# Map of connections between nodes with distances
+connections = {
+    'A': {'B': 2, 'C': 6},
+    'B': {'A': 5, 'D': 1, 'C': 4},
+    'C': {'A': 6, 'B': 4, 'E': 3},
+    'D': {'B': 3, 'F': 2},
+    'E': {'C': 3, 'F': 2},
+    'F': {'D': 4, 'E': 2}
+}
+
+
+def euclidean_distance(node1, node2):
+    """Calculate straight-line distance between two nodes."""
+    x1, y1 = nodes[node1]
+    x2, y2 = nodes[node2]
+    return math.sqrt((x2 - x1)**2 + (y2 - y1)**2)
+
+
+def a_star_search(start, goal):
+    """A* Search algorithm to find shortest path."""
+    open_list = [(euclidean_distance(start, goal), start, [start], 0)]
+    heapq.heapify(open_list)
+    closed_list = set()
+   
+    while open_list:
+        _, current, path, cost = heapq.heappop(open_list)
+       
+        if current == goal:
+            return cost, path
+           
+        if current in closed_list:
+            continue
+           
+        closed_list.add(current)
+       
+        for neighbor, distance in connections.get(current, {}).items():
+            if neighbor in closed_list:
+                continue
+           
+            new_cost = cost + distance
+            new_path = path + [neighbor]
+            f_score = new_cost + euclidean_distance(neighbor, goal)
+           
+            heapq.heappush(open_list, (f_score, neighbor, new_path, new_cost))
+   
+    return float('inf'), None
+
+
+def visualize_path(path):
+    """Visualize the nodes and path."""
+    plt.figure(figsize=(8, 6))
+   
+    # Plot all nodes
+    for node, (x, y) in nodes.items():
+        plt.scatter(x, y, c='blue', s=100)
+        plt.text(x + 0.1, y + 0.1, node, fontsize=12)
+   
+    # Plot all connections in light gray
+    for node, neighbors in connections.items():
+        x1, y1 = nodes[node]
+        for neighbor in neighbors:
+            x2, y2 = nodes[neighbor]
+            plt.plot([x1, x2], [y1, y2], 'lightgray', linestyle='--')
+   
+    # Plot the path in red
+    if path:
+        for i in range(len(path) - 1):
+            node1, node2 = path[i], path[i + 1]
+            x1, y1 = nodes[node1]
+            x2, y2 = nodes[node2]
+            plt.plot([x1, x2], [y1, y2], 'r-', linewidth=2.5)
+   
+    plt.title('A* Search Path')
+    plt.grid(True)
+    plt.show()
+
+
+def main():
+    start_node = 'A'
+    goal_node = 'F'
+   
+    print(f"Finding shortest path from {start_node} to {goal_node}...")
+    cost, path = a_star_search(start_node, goal_node)
+   
+    if path:
+        print(f"Path found: {' -> '.join(path)}")
+        print(f"Total distance: {cost}")
+        visualize_path(path)
+    else:
+        print(f"No path found from {start_node} to {goal_node}")
+
+
+if __name__ == "__main__":
+    main()
+
+—---------------------------------------------------------------------------------------------------------------------
+Implement the Minimax algorithm to solve the Tic Tac Toe problem
+import random
+import time
+
+
+# Initialize the board
+board = [" " for _ in range(9)]
+
+
+# Function to print the board
+def PrintBoard():
+    print("|---|---|---|")
+    print(f"| {board[0]} | {board[1]} | {board[2]} |")
+    print("|---|---|---|")
+    print(f"| {board[3]} | {board[4]} | {board[5]} |")
+    print("|---|---|---|")
+    print(f"| {board[6]} | {board[7]} | {board[8]} |")
+    print("|---|---|---|")
+
+
+def check_win(player):
+    win_conditions = [
+        [0, 1, 2], [3, 4, 5], [6, 7, 8],  # Rows
+        [0, 3, 6], [1, 4, 7], [2, 5, 8],  # Columns
+        [0, 4, 8], [2, 4, 6]              # Diagonals
+    ]
+    for condition in win_conditions:
+        if all(board[i] == player for i in condition):
+            return True
+    return False
+
+
+def check_tie():
+    return " " not in board
+
+
+def evaluate():
+    if check_win("X"):        # Human
+        return -10
+    elif check_win("O"):      # AI
+        return 10
+    return 0
+
+
+def is_moves_left():
+    return " " in board
+
+
+def minimax(depth, is_maximizing):
+    score = evaluate()
+   
+    if score == 10 or score == -10:
+        return score
+   
+    if not is_moves_left():
+        return 0
+   
+    if is_maximizing:
+        best = -float('inf')
+        for i in range(9):
+            if board[i] == " ":
+                board[i] = "O"  # AI is O
+                best = max(best, minimax(depth + 1, False))
+                board[i] = " "
+        return best
+    else:
+        best = float('inf')
+        for i in range(9):
+            if board[i] == " ":
+                board[i] = "X"  # Human is X
+                best = min(best, minimax(depth + 1, True))
+                board[i] = " "
+        return best
+
+
+def find_best_move():
+    best_val = -float('inf')
+    best_move = -1
+   
+    for i in range(9):
+        if board[i] == " ":
+            board[i] = "O"  # AI is O
+            move_val = minimax(0, False)
+            board[i] = " "
+           
+            if move_val > best_val:
+                best_val = move_val
+                best_move = i
+   
+    return best_move
+
+
+def human_move():
+    while True:
+        try:
+            position = int(input("Enter your move (0-8): "))
+            if position < 0 or position > 8:
+                print("Invalid move! Position must be between 0 and 8. Try again.")
+                continue
+            if board[position] == " ":
+                board[position] = "X"
+                break
+            else:
+                print("Invalid move! Position already taken. Try again.")
+        except ValueError:
+            print("Please enter a valid number!")
+
+
+def PlayGame():
+    global board
+    board = [" " for _ in range(9)]
+   
+    print("\nYou will play as X, and the AI will play as O")
+    print("Board positions are numbered from 0 to 8, as shown below:")
+    print("0 | 1 | 2")
+    print("---------")
+    print("3 | 4 | 5")
+    print("---------")
+    print("6 | 7 | 8\n")
+   
+    # Randomly decide who goes first
+    human_first = random.choice([True, False])
+   
+    while True:
+        if not human_first:
+            print("\nAI's turn...")
+            time.sleep(1)
+            move = find_best_move()
+            board[move] = "O"
+            PrintBoard()
+           
+            if check_win("O"):
+                print("AI wins!")
+                break
+            human_first = True
+       
+        if check_tie():
+            print("It's a tie!")
+            break
+           
+        print("\nYour turn...")
+        human_move()
+        PrintBoard()
+       
+        if check_win("X"):
+            print("Congratulations! You win!")
+            break
+           
+        if check_tie():
+            print("It's a tie!")
+            break
+           
+        human_first = False
+
+
+if __name__ == "__main__":
+    print("Welcome to Tic-Tac-Toe!")
+    print("You'll be playing against an unbeatable AI")
+    PlayGame()
+   
+    while input("\nDo you want to play again? (y/n): ").lower().startswith('y'):
+        PlayGame()
+   
+    print("Thanks for playing!")
+
+—---------------------------------------------------------------------------------------------------------------------
+Implement NLP problems statements by HackerRank for the following: 
+a. POS Tagging 
+import re
+
+
+def fill_missing_tags(sentence):
+    # Extract all existing tags
+    tags = re.findall(r'/([A-Z]+)(?=\s|,|\.)', sentence)
+    existing_tags = set(tags)
+     
+    # Split the sentence into tokens while preserving delimiters
+    tokens = re.split(r'(\s|,|\.)', sentence)
+     
+    for i in range(len(tokens)):
+        token = tokens[i]
+        if '?' in token:
+            # Split the word and the missing tag
+            parts = token.split('/')
+            word = parts[0]
+            missing_tag = parts[1]
+             
+            # Determine the required tag length
+            tag_length = len(missing_tag)
+             
+            # Find possible tags of the required length
+            possible_tags = [tag for tag in existing_tags if len(tag) == tag_length]
+             
+            # Choose the most appropriate tag based on context
+            if tag_length == 2:
+                if word.lower() in ['system', 'star', 'computer', 'book', 'table']:
+                    chosen_tag = 'NN'  # Noun
+                elif word.lower() in ['is', 'am', 'are']:
+                    chosen_tag = 'VB'  # Verb
+                else:
+                    chosen_tag = possible_tags[0] if possible_tags else 'NN'
+            elif tag_length == 3:
+                if word.lower() in ['caught', 'seen', 'done']:
+                    chosen_tag = 'VBN'  # Past participle
+                elif word.lower() in ['was', 'were']:
+                    chosen_tag = 'VBD'  # Past tense verb
+                else:
+                    chosen_tag = possible_tags[0] if possible_tags else 'VBN'
+             
+            # Replace the missing tag
+            tokens[i] = f"{word}/{chosen_tag}"
+     
+    # Reconstruct the sentence
+    filled_sentence = ''.join(tokens)
+    return filled_sentence
+
+
+def main():
+    # Sample input with missing tags
+    sample_input = "She/PRP watched/??? the/DT movie/?? last/JJ night/NN, and/CC it/PRP was/VBD amazing/JJ."
+
+
+    print("Input sentence:", sample_input)
+   
+    # Fill in the missing tags
+    output_sentence = fill_missing_tags(sample_input)
+   
+    # Print the output
+    print("\nOutput sentence:", output_sentence)
+
+
+if __name__ == "__main__":
+    main()
+
+b. Similarity Score 
+import math
+ 
+d = list()
+d.append('An apple a day keeps the doctor away'.lower().split(' '))
+d.append('Never compare an apple to an orange'.lower().split(' '))
+ 
+d.append('I prefer scikit-learn to orange'.lower().split(' '))
+compDoc = "I'd like an apple".split(' ')
+ 
+terms = set()
+tf = list()
+temp = dict()
+for doc in d:
+    for item in doc:
+        temp[item] = doc.count(item)/len(doc)
+        terms.add(item)
+    tf.append(temp)
+    temp = dict()
+ 
+idf = dict()
+temp = dict()
+for term in terms:
+    temp[term] = 0
+    for doc in d:
+        if term in doc:
+            temp[term]+=1
+    idf[term] = 1+math.log(3/temp[term])
+#print("idf:\n",idf)
+     
+tfidf = [0, 0, 0]
+for term in compDoc:
+    for i in range(len(d)):
+        if term in d[i]:
+            tfidf[i]+= tf[i][term]*idf[term]
+print(tfidf.index(max(tfidf))+2)
+
+c. Spell Checker
+import re
+from collections import Counter
+
+
+# Simulated corpus for the purpose of spelling correction
+CORPUS_TEXT = """
+Normally people are serious and pure in their intent. They note everything and contain all
+the necessary documents.
+An accident dose can change someone's life. The result is purely unexpected, even if
+everything seems ordinary.
+END-OF-CORPUS
+"""
+
+
+def load_corpus(text):
+    word_freq = Counter()
+    for line in text.splitlines():
+        if line.strip() == "END-OF-CORPUS":
+            break
+        words = re.findall(r"[a-zA-Z'-]+", line.lower())
+        word_freq.update(words)
+    return word_freq
+
+
+def edits1(word):
+    letters = 'abcdefghijklmnopqrstuvwxyz'
+    splits = [(word[:i], word[i:]) for i in range(len(word) + 1)]
+
+
+    deletes = [L + R[1:] for L, R in splits if R]
+    transposes = [L + R[1] + R[0] + R[2:] for L, R in splits if len(R) > 1]
+    replaces = [L + c + R[1:] for L, R in splits if R for c in letters]
+    inserts = [L + c + R for L, R in splits for c in letters]
+
+
+    return set(deletes + transposes + replaces + inserts)
+
+
+def correct(word, word_freq):
+    word = word.lower()
+    if word in word_freq:
+        return word
+
+
+    candidates = edits1(word)
+    valid_candidates = [w for w in candidates if w in word_freq]
+
+
+    if not valid_candidates:
+        return word
+
+
+    return max(valid_candidates, key=lambda w: (word_freq[w], -len(w)))  # Prefer higher freq, shorter word
+
+
+def main():
+    word_freq = load_corpus(CORPUS_TEXT)
+
+
+    try:
+        N = int(input("Enter number of words to correct: "))
+        for _ in range(N):
+            word = input("Enter word: ").strip()
+            print("Corrected:", correct(word, word_freq))
+    except Exception as e:
+        print("Error:", e)
+
+
+if __name__ == "__main__":
+    main()
+   
+
+
+
+—--------------------------------------------------------------------------------------------------------------
+
+IImplement Constraint Satisfaction Algorithm for the following problems: 
+a. Cryptarithmetic 
+from itertools import permutations
+
+
+class CSP_Cryptarithm:
+    def __init__(self, input_str):
+        parts = input_str.strip().split()
+
+
+        if len(parts) != 5 or parts[3] != '=':
+            raise ValueError("Invalid format. Use: WORD1 + WORD2 = RESULT")
+
+
+        self.word1 = parts[0].upper()
+        self.op = parts[1]
+        self.word2 = parts[2].upper()
+        self.result = parts[4].upper()
+
+
+        # Extract all unique letters
+        self.letters = []
+        for word in [self.word1, self.word2, self.result]:
+            for ch in word:
+                if ch not in self.letters:
+                    self.letters.append(ch)
+
+
+        if len(self.letters) > 10:
+            raise ValueError("Too many unique letters (>10)")
+
+
+        self.solution_found = False
+        self.assignment = {}
+
+
+    def is_valid_assignment(self, perm):
+        mapping = dict(zip(self.letters, perm))
+
+
+        # Leading letters can't be zero
+        if (mapping[self.word1[0]] == 0 or
+            mapping[self.word2[0]] == 0 or
+            mapping[self.result[0]] == 0):
+            return False
+
+
+        def word_to_number(word):
+            return int(''.join(str(mapping[c]) for c in word))
+
+
+        try:
+            num1 = word_to_number(self.word1)
+            num2 = word_to_number(self.word2)
+            res = word_to_number(self.result)
+
+
+            if self.op == '+' and num1 + num2 == res:
+                self.assignment = mapping
+                return True
+            elif self.op == '-' and num1 - num2 == res:
+                self.assignment = mapping
+                return True
+            elif self.op == '*' and num1 * num2 == res:
+                self.assignment = mapping
+                return True
+            elif self.op == '/' and num2 != 0 and num1 / num2 == res:
+                self.assignment = mapping
+                return True
+        except:
+            return False
+
+
+        return False
+
+
+    def solve(self):
+        for perm in permutations(range(10), len(self.letters)):
+            if self.is_valid_assignment(perm):
+                self.solution_found = True
+                return
+
+
+    def display_result(self):
+        print(f"Line 1 : {self.word1}")
+        print(f"Line 2 : {self.word2}")
+        print(f"Line 3 : {self.result}")
+        print(f"Operation : {self.op}\n")
+
+
+        if self.solution_found:
+            print("Solution Found:")
+            for letter in sorted(self.assignment.keys()):
+                print(f"{letter} - {self.assignment[letter]}")
+        else:
+            print("No solution found.")
+
+
+# ------------------------
+# Main Driver
+# ------------------------
+if __name__ == "__main__":
+    try:
+        problem = input("Enter the problem (e.g., CROSS + ROAD = DANGER): ").strip().upper()
+        solver = CSP_Cryptarithm(problem)
+        solver.solve()
+        solver.display_result()
+    except Exception as e:
+        print("Error:", e)
+
+
+
+Enter the problem (e.g., CROSS + ROAD = DANGER): SEND + MORE = MONEY
+Line 1 : SEND
+Line 2 : MORE  
+Line 3 : MONEY 
+Operation : +  
+
+Solution Found:
+D - 7
+E - 5
+M - 1
+N - 6
+O - 0
+R - 8
+S - 9
+Y - 2
+
+b. Crossword puzzle 
+def solve_crossword(grid, words):
+    def is_valid(word, row, col, direction):
+        if direction == 'across':
+            if col + len(word) > len(grid[0]):
+                return False
+            for i, letter in enumerate(word):
+                if grid[row][col + i] not in ('_', letter):
+                    return False
+        elif direction == 'down':
+            if row + len(word) > len(grid):
+                return False
+            for i, letter in enumerate(word):
+                if grid[row + i][col] not in ('_', letter):
+                    return False
+        return True
+
+
+    def place_word(word, row, col, direction):
+        if direction == 'across':
+            for i, letter in enumerate(word):
+                grid[row][col + i] = letter
+        elif direction == 'down':
+            for i, letter in enumerate(word):
+                grid[row + i][col] = letter
+
+
+    def remove_word(word, row, col, direction):
+        if direction == 'across':
+            for i, _ in enumerate(word):
+                grid[row][col + i] = '_'
+        elif direction == 'down':
+            for i, _ in enumerate(word):
+                grid[row + i][col] = '_'
+
+
+    def solve_util(words_to_place):
+        if not words_to_place:
+            return True
+
+
+        word = words_to_place.pop()
+        for row in range(len(grid)):
+            for col in range(len(grid[0])):
+                for direction in ('across', 'down'):
+                    if is_valid(word, row, col, direction):
+                        place_word(word, row, col, direction)
+                        if solve_util(words_to_place):
+                            return True
+                        remove_word(word, row, col, direction)
+        words_to_place.append(word)
+        return False
+
+
+    words_to_place = list(words)
+    return solve_util(words_to_place)
+
+
+def print_grid(grid):
+    for row in grid:
+        print(' '.join(row))
+
+
+# Input
+rows = int(input("Enter the number of rows in the crossword grid: "))
+cols = int(input("Enter the number of columns in the crossword grid: "))
+grid = [['_' for _ in range(cols)] for _ in range(rows)]
+
+
+num_words = int(input("Enter the number of words: "))
+words = []
+for i in range(num_words):
+    word = input(f"Enter word {i + 1}: ").upper()
+    words.append(word)
+
+
+# Solve the crossword puzzle
+solution_found = solve_crossword(grid, words)
+
+
+if solution_found:
+    print("Solution found:")
+    print_grid(grid)
+else:
+    print("No solution found.")
+
+
+
+
+Enter the number of rows in the crossword grid: 5
+Enter the number of columns in the crossword grid: 5
+Enter the number of words: 3
+Enter word 1: HELLO
+Enter word 2: WORLD
+Enter word 3: HOW
+
+c. Map coloring problem
+def color_map_user_input():
+    def is_valid(node, color):
+        # Check if assigning a color to a node is valid based on its neighbors' colors
+        for neighbor in graph[node]:
+            if neighbor in coloring and coloring[neighbor] == color:
+                return False
+        return True
+
+
+    def backtrack(node):
+        # Recursive backtracking function to assign colors to nodes
+        if node is None:
+            return True  # Base case: all nodes are colored
+        for color in range(len(colors)):
+            if is_valid(node, color):
+                coloring[node] = color  # Assign color to the node
+                if backtrack(next_node()):  # Recursively color the next node
+                    return True
+                del coloring[node]  # Backtrack if coloring doesn't lead to a solution
+        return False  # No valid color found for the node
+
+
+    def next_node():
+        # Find the next uncolored node
+        for node in graph:
+            if node not in coloring:
+                return node
+        return None  # All nodes are colored
+
+
+    # Take user input for the map graph
+    graph = {}
+    num_regions = int(input("Enter the number of regions: "))
+    print("Enter the connections for each region (format: Region Neighbor1 Neighbor2 ...):")
+    for _ in range(num_regions):
+        region, *neighbors = input().split()
+        graph[region] = neighbors
+
+
+    # Take user input for the available colors
+    num_colors = int(input("Enter the number of available colors: "))
+    colors = range(num_colors)
+
+
+    coloring = {}  # Store the color assigned to each node
+    if backtrack(next_node()):
+        return coloring  # Return the coloring solution
+    else:
+        return None  # No solution found
+
+
+# Example usage with user input
+solution = color_map_user_input()
+color_names = ['Red', 'Green', 'Blue']
+if solution:
+    print("Map coloring solution found:")
+    for region, color in solution.items():
+        print(f"{region}: {color_names[color]}")
+else:
+    print("No solution found")
+
+
+
+
+Enter the number of regions: 4
+Enter the connections for each region (format: Region Neighbor1 Neighbor2 ...):
+A B D
+B A C
+C B D
+D A C
+Enter the number of available colors: 3
+
+
+
