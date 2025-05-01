@@ -1,0 +1,93 @@
+Implement the Hill Climbing technique to solve the 8 puzzle problem. 
+import random
+
+
+# Define the goal state
+goal_state = [
+    [1, 2, 3],
+    [4, 5, 0],
+    [7, 8, 6]
+]
+
+
+# Function to find the position of the blank tile (0)
+def find_blank(state):
+    for i in range(3):
+        for j in range(3):
+            if state[i][j] == 0:
+                return i, j
+    return -1, -1
+
+
+# Function to check if a state is the goal state
+def is_goal_state(state):
+    return state == goal_state
+
+
+# Function to generate neighbors by moving the blank tile
+def generate_neighbors(state):
+    neighbors = []
+    i, j = find_blank(state)
+   
+    # Define possible moves
+    moves = [(-1, 0), (1, 0), (0, -1), (0, 1)]  # up, down, left, right
+   
+    for move in moves:
+        ni, nj = i + move[0], j + move[1]
+        if 0 <= ni < 3 and 0 <= nj < 3:
+            new_state = [row[:] for row in state]  # Create a copy of the state
+            new_state[i][j], new_state[ni][nj] = new_state[ni][nj], new_state[i][j]  # Swap the blank tile with the neighbor
+            neighbors.append(new_state)
+   
+    return neighbors
+
+
+# Function to calculate the heuristic (misplaced tiles)
+def heuristic(state):
+    misplaced = 0
+    for i in range(3):
+        for j in range(3):
+            if state[i][j] != goal_state[i][j] and state[i][j] != 0:
+                misplaced += 1
+    return misplaced
+
+
+# Hill Climbing Algorithm
+def hill_climbing(initial_state):
+    current_state = initial_state
+    while True:
+        if is_goal_state(current_state):
+            return current_state
+       
+        neighbors = generate_neighbors(current_state)
+        best_neighbor = None
+        best_heuristic = float('inf')
+       
+        for neighbor in neighbors:
+            h = heuristic(neighbor)
+            if h < best_heuristic:
+                best_heuristic = h
+                best_neighbor = neighbor
+       
+        # If no improvement is found, we are stuck
+        if best_heuristic >= heuristic(current_state):
+            return None
+       
+        current_state = best_neighbor
+
+
+# Example Usage
+initial_state = [
+    [1, 2, 3],
+    [4, 5, 6],
+    [7, 8, 0]
+]
+
+
+solution = hill_climbing(initial_state)
+if solution:
+    print("Goal reached!")
+    for row in solution:
+        print(row)
+else:
+    print("No solution found (stuck in local minima).")
