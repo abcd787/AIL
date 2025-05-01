@@ -1,0 +1,251 @@
+# a. N puzzle –
+import heapq
+
+class NPuzzleState:
+    def __init__(self, board, parent=None, move=""):
+        self.board = [row[:] for row in board]
+        self.parent = parent
+        self.move = move
+        self.g = 0  # cost from start
+        if parent:
+            self.g = parent.g + 1
+
+    def __eq__(self, other):
+        return self.board == other.board
+
+    def __lt__(self, other):
+        return (self.g + self.heuristic()) < (other.g + other.heuristic())
+
+    def __hash__(self):
+        return hash(tuple(tuple(row) for row in self.board))
+
+    def find_blank(self):
+        for i in range(len(self.board)):
+            for j in range(len(self.board[0])):
+                if self.board[i][j] == 0:
+                    return i, j
+
+    def heuristic(self):
+        # Manhattan distance heuristic
+        distance = 0
+        n = len(self.board)
+        for i in range(n):
+            for j in range(n):
+                if self.board[i][j] != 0:
+                    x, y = divmod(self.board[i][j] - 1, n)
+                    distance += abs(x - i) + abs(y - j)
+        return distance
+
+    def get_successors(self):
+        successors = []
+        i, j = self.find_blank()
+        moves = [(0, 1, 'Right'), (0, -1, 'Left'), (1, 0, 'Down'), (-1, 0, 'Up')]
+
+        for di, dj, move in moves:
+            ni, nj = i + di, j + dj
+            if 0 <= ni < len(self.board) and 0 <= nj < len(self.board[0]):
+                new_board = [row[:] for row in self.board]
+                new_board[i][j], new_board[ni][nj] = new_board[ni][nj], new_board[i][j]
+                successors.append(NPuzzleState(new_board, self, move))
+        return successors
+
+def a_star_npuzzle(initial_board, goal_board):
+    initial_state = NPuzzleState(initial_board)
+    goal_state = NPuzzleState(goal_board)
+    
+    open_list = []
+    closed_set = set()
+    heapq.heappush(open_list, (initial_state.g + initial_state.heuristic(), initial_state))
+    
+    while open_list:
+        _, current = heapq.heappop(open_list)
+        
+        if current.board == goal_state.board:
+            path = []
+            while current.parent:
+                path.append(current.move)
+                current = current.parent
+            return path[::-1]
+        
+        closed_set.add(current)
+        
+        for successor in current.get_successors():
+            if successor not in closed_set:
+                heapq.heappush(open_list, (successor.g + successor.heuristic(), successor))
+    
+    return None
+
+# Example usage for 8-puzzle (3x3)
+initial = [[1, 2, 3], [0, 4, 6], [7, 5, 8]]
+goal = [[1, 2, 3], [4, 5, 6], [7, 8, 0]]
+print("N-Puzzle Solution:", a_star_npuzzle(initial, goal))
+
+# b. Robot Navigation problem –
+import heapq
+import math
+
+class RobotState:
+    def __init__(self, position, parent=None, action=None):
+        self.position = position
+        self.parent = parent
+        self.action = action
+        self.g = 0  # cost from start
+        if parent:
+            self.g = parent.g + 1
+
+    def __eq__(self, other):
+        return self.position == other.position
+
+    def __lt__(self, other):
+        return (self.g + self.heuristic()) < (other.g + other.heuristic())
+
+    def __hash__(self):
+        return hash(self.position)
+
+    def heuristic(self, goal_position):
+        # Euclidean distance heuristic
+        return math.sqrt((self.position[0] - goal_position[0])**2 + 
+                        (self.position[1] - goal_position[1])**2)
+
+    def get_successors(self, grid):
+        successors = []
+        rows, cols = len(grid), len(grid[0])
+        x, y = self.position
+        moves = [(-1, 0, 'Up'), (1, 0, 'Down'), (0, -1, 'Left'), (0, 1, 'Right')]
+
+        for dx, dy, action in moves:
+            nx, ny = x + dx, y + dy
+            if 0 <= nx < rows and 0 <= ny < cols and grid[nx][ny] != 1:
+                successors.append(RobotState((nx, ny), self, action))
+        return successors
+
+def a_star_robot(grid, start, goal):
+    open_list = []
+    closed_set = set()
+    start_state = RobotState(start)
+    heapq.heappush(open_list, (start_state.g + start_state.heuristic(goal), start_state))
+    
+    while open_list:
+        _, current = heapq.heappop(open_list)
+        
+        if current.position == goal:
+            path = []
+            while current.parent:
+                path.append(current.action)
+                current = current.parent
+            return path[::-1]
+        
+        closed_set.add(current)
+        
+        for successor in current.get_successors(grid):
+            if successor not in closed_set:
+                heapq.heappush(open_list, 
+                             (successor.g + successor.heuristic(goal), successor))
+    
+    return None
+
+# Example usage
+grid = [
+    [0, 0, 0, 0, 1],
+    [1, 1, 0, 1, 0],
+    [0, 0, 0, 0, 0],
+    [0, 1, 1, 1, 0],
+    [0, 0, 0, 0, 0]
+]
+start = (0, 0)
+goal = (4, 4)
+print("Robot Navigation Solution:", a_star_robot(grid, start, goal))
+
+
+# c. Cities Distance (shortest path) problem-
+import heapq
+
+class CityGraph:
+    def __init__(self):
+        self.graph = {}
+    
+    def add_edge(self, city1, city2, distance):
+        if city1 not in self.graph:
+            self.graph[city1] = {}
+        if city2 not in self.graph:
+            self.graph[city2] = {}
+        self.graph[city1][city2] = distance
+        self.graph[city2][city1] = distance
+
+class CityState:
+    def __init__(self, city, parent=None, cost=0, goal_city=None, straight_line_distances=None):
+        self.city = city
+        self.parent = parent
+        self.cost = cost  # g value
+        self.goal_city = goal_city
+        self.straight_line_distances = straight_line_distances
+
+    def __eq__(self, other):
+        return self.city == other.city
+
+    def __lt__(self, other):
+        return (self.cost + self.heuristic()) < (other.cost + other.heuristic())
+
+    def __hash__(self):
+        return hash(self.city)
+
+    def heuristic(self):
+        # Use straight-line distance as heuristic (must be admissible)
+        return self.straight_line_distances.get(self.city, {}).get(self.goal_city, 0)
+
+def a_star_cities(graph, start, goal, straight_line_distances):
+    open_list = []
+    closed_set = set()
+    start_state = CityState(start, None, 0, goal, straight_line_distances)
+    heapq.heappush(open_list, 
+                  (start_state.cost + start_state.heuristic(), 
+                  start_state))
+    
+    while open_list:
+        _, current = heapq.heappop(open_list)
+        
+        if current.city == goal:
+            path = []
+            total_distance = current.cost
+            while current.parent:
+                path.append(current.city)
+                current = current.parent
+            path.append(start)
+            return path[::-1], total_distance
+        
+        closed_set.add(current.city)
+        
+        for neighbor, distance in graph.graph[current.city].items():
+            if neighbor not in closed_set:
+                new_cost = current.cost + distance
+                new_state = CityState(neighbor, current, new_cost, goal, straight_line_distances)
+                heapq.heappush(open_list, 
+                             (new_state.cost + new_state.heuristic(),
+                             new_state))
+    
+    return None, None
+
+# Example usage
+city_graph = CityGraph()
+city_graph.add_edge('A', 'B', 4)
+city_graph.add_edge('A', 'C', 2)
+city_graph.add_edge('B', 'C', 1)
+city_graph.add_edge('B', 'D', 5)
+city_graph.add_edge('C', 'D', 8)
+city_graph.add_edge('C', 'E', 10)
+city_graph.add_edge('D', 'E', 2)
+
+# Straight-line distances (must be <= actual distance)
+straight_line_dist = {
+    'A': {'E': 10},
+    'B': {'E': 8},
+    'C': {'E': 7},
+    'D': {'E': 2},
+    'E': {'E': 0}
+}
+
+start = 'A'
+goal = 'E'
+path, distance = a_star_cities(city_graph, start, goal, straight_line_dist)
+print("Cities Path Solution:", path)
+print("Total Distance:", distance)
