@@ -1,0 +1,2022 @@
+// Code Name: Eight Puzzle Solver (Best First Search)
+// Topic: Informed Search Algorithms - Best First Search
+// Theory: Best First Search is an informed search algorithm that uses a heuristic to estimate the cost from the current node to the goal. In the 8-puzzle, the Manhattan distance heuristic is used, which sums the distances of each tile from its goal position. The algorithm always expands the node that appears to be closest to the goal, making it efficient for pathfinding in state spaces where a good heuristic is available.
+// Explanation: This code solves the 8-puzzle problem using Best First Search. It finds a sequence of moves to reach the goal state from a given initial state, using the Manhattan distance as the heuristic to guide the search.
+
+<code>
+import numpy as np
+from queue import PriorityQueue
+import copy
+
+# Example user input for interactive mode:
+# Enter row 1: 1 2 3
+# Enter row 2: 4 0 6
+# Enter row 3: 7 5 8
+
+class EightPuzzle:
+    def __init__(self, initial_state=None):
+        if initial_state is None:
+            self.state = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 0]])
+        else:
+            self.state = np.array(initial_state)
+        self.goal = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 0]])
+        
+    def get_blank_pos(self):
+        pos = np.where(self.state == 0)
+        return pos[0][0], pos[1][0]
+    
+    def get_manhattan_distance(self):
+        distance = 0
+        for i in range(3):
+            for j in range(3):
+                if self.state[i][j] != 0:
+                    x, y = divmod(self.state[i][j] - 1, 3)
+                    distance += abs(x - i) + abs(y - j)
+        return distance
+    
+    def get_possible_moves(self):
+        moves = []
+        x, y = self.get_blank_pos()
+        
+        # Check all possible moves (up, down, left, right)
+        for dx, dy in [(0, 1), (1, 0), (0, -1), (-1, 0)]:
+            new_x, new_y = x + dx, y + dy
+            if 0 <= new_x < 3 and 0 <= new_y < 3:
+                new_state = copy.deepcopy(self.state)
+                new_state[x][y], new_state[new_x][new_y] = new_state[new_x][new_y], new_state[x][y]
+                moves.append(new_state)
+        return moves
+    
+    def is_goal(self):
+        return np.array_equal(self.state, self.goal)
+    
+    def solve(self):
+        visited = set()
+        pq = PriorityQueue()
+        initial_cost = self.get_manhattan_distance()
+        pq.put((initial_cost, self.state.tobytes(), [self.state.tolist()]))
+        
+        while not pq.empty():
+            cost, state_bytes, path = pq.get()
+            current_state = np.frombuffer(state_bytes, dtype=int).reshape(3, 3)
+            
+            if np.array_equal(current_state, self.goal):
+                return path
+            
+            if state_bytes in visited:
+                continue
+                
+            visited.add(state_bytes)
+            self.state = current_state
+            
+            for next_state in self.get_possible_moves():
+                if next_state.tobytes() not in visited:
+                    self.state = next_state
+                    new_cost = self.get_manhattan_distance()
+                    new_path = path + [next_state.tolist()]
+                    pq.put((new_cost, next_state.tobytes(), new_path))
+        
+        return None
+
+def print_solution(path):
+    for i, state in enumerate(path):
+        print(f"Step {i}:")
+        for row in state:
+            print(row)
+        print()
+
+def main():
+    # Example with user input
+    print("Enter the initial state of the 8-puzzle (use 0 for empty space)")
+    print("Enter each row with spaces between numbers:")
+    initial_state = []
+    for i in range(3):
+        row = list(map(int, input(f"Enter row {i + 1}: ").strip().split()))
+        initial_state.append(row)
+    
+    puzzle = EightPuzzle(initial_state)
+    solution = puzzle.solve()
+    
+    if solution:
+        print("\nSolution found!")
+        print_solution(solution)
+    else:
+        print("\nNo solution found!")
+
+// Code Name: Robot Navigation (Best First Search)
+// Topic: Informed Search Algorithms - Best First Search
+// Theory: Best First Search is an informed search strategy that uses a heuristic to guide the search towards the goal. In robot navigation, the Manhattan distance heuristic estimates the cost from the current cell to the goal, allowing the algorithm to efficiently find a path in a grid with obstacles. The algorithm always expands the node that appears closest to the goal according to the heuristic, making it suitable for pathfinding in grid-based environments.
+// Explanation: This code finds a path for a robot from a start to a goal position in a 2D grid using Best First Search. Obstacles are represented as 1s, and free spaces as 0s. The algorithm uses the Manhattan distance to prioritize which cell to explore next.
+
+<code>
+import numpy as np
+from queue import PriorityQueue
+
+# Example user input for interactive mode:
+# Enter the grid dimensions (rows cols): 5 5
+# Enter the grid (5 rows, use 0 for free space and 1 for obstacles):
+# 0 0 0 0 0
+# 0 1 1 0 0
+# 0 0 0 0 0
+# 0 1 1 1 0
+# 0 0 0 0 0
+# Enter start position (row col): 0 0
+# Enter goal position (row col): 4 4
+
+class RobotNavigation:
+    def __init__(self, grid=None, start=None, goal=None):
+        if grid is None:
+            self.grid = np.array([
+                [0, 0, 0, 0, 0],
+                [0, 1, 1, 0, 0],
+                [0, 0, 0, 0, 0],
+                [0, 1, 1, 1, 0],
+                [0, 0, 0, 0, 0]
+            ])  # 0 represents free space, 1 represents obstacle
+        else:
+            self.grid = np.array(grid)
+            
+        self.rows, self.cols = self.grid.shape
+        self.start = start if start else (0, 0)
+        self.goal = goal if goal else (self.rows-1, self.cols-1)
+    
+    def get_manhattan_distance(self, pos):
+        return abs(pos[0] - self.goal[0]) + abs(pos[1] - self.goal[1])
+    
+    def get_neighbors(self, pos):
+        neighbors = []
+        for dx, dy in [(0, 1), (1, 0), (0, -1), (-1, 0)]:  # right, down, left, up
+            new_x, new_y = pos[0] + dx, pos[1] + dy
+            if (0 <= new_x < self.rows and 
+                0 <= new_y < self.cols and 
+                self.grid[new_x][new_y] == 0):
+                neighbors.append((new_x, new_y))
+        return neighbors
+    
+    def solve(self):
+        visited = set()
+        pq = PriorityQueue()
+        
+        # Priority queue items: (manhattan_distance, current_position, path)
+        initial_cost = self.get_manhattan_distance(self.start)
+        pq.put((initial_cost, self.start, [self.start]))
+        
+        while not pq.empty():
+            cost, current_pos, path = pq.get()
+            
+            if current_pos == self.goal:
+                return path
+            
+            if current_pos in visited:
+                continue
+                
+            visited.add(current_pos)
+            
+            for next_pos in self.get_neighbors(current_pos):
+                if next_pos not in visited:
+                    new_cost = self.get_manhattan_distance(next_pos)
+                    new_path = path + [next_pos]
+                    pq.put((new_cost, next_pos, new_path))
+        
+        return None
+
+def print_path_on_grid(grid, path):
+    grid_copy = grid.copy()
+    for i, (x, y) in enumerate(path):
+        if i == 0:
+            grid_copy[x][y] = 'S'  # Start
+        elif i == len(path) - 1:
+            grid_copy[x][y] = 'G'  # Goal
+        else:
+            grid_copy[x][y] = '*'  # Path
+    
+    print("\nPath visualization ('S': Start, 'G': Goal, '*': Path, '1': Obstacle, '0': Free space):")
+    for row in grid_copy:
+        print(' '.join(str(cell) for cell in row))
+
+def main():
+    # Example with user input
+    print("Enter the grid dimensions (rows cols):")
+    rows, cols = map(int, input().strip().split())
+    
+    print(f"Enter the grid ({rows} rows, use 0 for free space and 1 for obstacles):")
+    grid = []
+    for _ in range(rows):
+        row = list(map(int, input().strip().split()))
+        grid.append(row)
+    
+    print("Enter start position (row col):")
+    start = tuple(map(int, input().strip().split()))
+    
+    print("Enter goal position (row col):")
+    goal = tuple(map(int, input().strip().split()))
+    
+    robot = RobotNavigation(grid, start, goal)
+    path = robot.solve()
+    
+    if path:
+        print("\nSolution found!")
+        print("Path:", path)
+        print_path_on_grid(robot.grid, path)
+    else:
+        print("\nNo solution found!")
+
+// Code Name: Cities Distance Shortest Path (Best First Search)
+// Topic: Informed Search Algorithms - Best First Search
+// Theory: Best First Search uses a heuristic to estimate the cost from the current node to the goal. In the context of finding the shortest path between cities, the heuristic can be the shortest path length in the current graph. The algorithm expands the node that appears to be closest to the goal, making it efficient for pathfinding in graphs where a good heuristic is available.
+// Explanation: This code finds the shortest path between two cities in a graph using Best First Search. The cities and distances are represented as a graph, and the algorithm uses the shortest path length as a heuristic to guide the search.
+
+<code>
+import networkx as nx
+from queue import PriorityQueue
+
+# Example user input for interactive mode:
+# Enter number of cities: 3
+# Enter city details (name latitude longitude):
+# A 0 0
+# B 0 1
+# C 1 1
+# Enter number of connections: 3
+# Enter connections (city1 city2 distance):
+# A B 1
+# B C 1
+# A C 2
+# Enter start city: A
+# Enter end city: C
+
+class CitiesDistance:
+    def __init__(self, cities=None, distances=None):
+        self.graph = nx.Graph()
+        
+        if cities is None or distances is None:
+            # Default example with some Indian cities
+            self.cities = {
+                'Mumbai': (19.0760, 72.8777),
+                'Delhi': (28.6139, 77.2090),
+                'Bangalore': (12.9716, 77.5946),
+                'Chennai': (13.0827, 80.2707),
+                'Kolkata': (22.5726, 88.3639)
+            }
+            
+            # Example distances in kilometers
+            self.distances = [
+                ('Mumbai', 'Delhi', 1427),
+                ('Mumbai', 'Bangalore', 981),
+                ('Delhi', 'Kolkata', 1305),
+                ('Bangalore', 'Chennai', 346),
+                ('Chennai', 'Kolkata', 1659),
+                ('Mumbai', 'Chennai', 1338),
+                ('Delhi', 'Bangalore', 2150)
+            ]
+        else:
+            self.cities = cities
+            self.distances = distances
+        
+        self._build_graph()
+    
+    def _build_graph(self):
+        # Add all cities to the graph
+        for city, coords in self.cities.items():
+            self.graph.add_node(city, pos=coords)
+        
+        # Add all distances as edges
+        for city1, city2, distance in self.distances:
+            self.graph.add_edge(city1, city2, weight=distance)
+    
+    def get_distance(self, city1, city2):
+        try:
+            return nx.shortest_path_length(self.graph, city1, city2, weight='weight')
+        except nx.NetworkXNoPath:
+            return float('inf')
+    
+    def solve(self, start_city, end_city):
+        if start_city not in self.cities or end_city not in self.cities:
+            return None
+        
+        visited = set()
+        pq = PriorityQueue()
+        
+        # Priority queue items: (estimated_total_distance, current_city, path, total_distance)
+        initial_distance = self.get_distance(start_city, end_city)
+        pq.put((initial_distance, start_city, [start_city], 0))
+        
+        while not pq.empty():
+            _, current_city, path, distance = pq.get()
+            
+            if current_city == end_city:
+                return path, distance
+            
+            if current_city in visited:
+                continue
+            
+            visited.add(current_city)
+            
+            for neighbor in self.graph.neighbors(current_city):
+                if neighbor not in visited:
+                    edge_distance = self.graph[current_city][neighbor]['weight']
+                    new_distance = distance + edge_distance
+                    estimated_remaining = self.get_distance(neighbor, end_city)
+                    new_path = path + [neighbor]
+                    pq.put((new_distance + estimated_remaining, neighbor, new_path, new_distance))
+        
+        return None
+
+def main():
+    # Example with user input
+    print("Enter number of cities:")
+    n = int(input())
+    
+    cities = {}
+    print("Enter city details (name latitude longitude):")
+    for _ in range(n):
+        name, lat, lon = input().strip().split()
+        cities[name] = (float(lat), float(lon))
+    
+    print("Enter number of connections:")
+    m = int(input())
+    
+    distances = []
+    print("Enter connections (city1 city2 distance):")
+    for _ in range(m):
+        city1, city2, dist = input().strip().split()
+        distances.append((city1, city2, float(dist)))
+    
+    router = CitiesDistance(cities, distances)
+    
+    print("Enter start city:")
+    start_city = input().strip()
+    print("Enter end city:")
+    end_city = input().strip()
+    
+    result = router.solve(start_city, end_city)
+    
+    if result:
+        path, distance = result
+        print("\nPath found!")
+        print("Route:", " -> ".join(path))
+        print(f"Total distance: {distance} km")
+    else:
+        print("\nNo path found!")
+
+// Code Name: Cities Distance with Haversine Distance (A* Search)
+// Topic: Informed Search Algorithms - A* Search
+// Theory: A* Search is a best-first search algorithm that finds the shortest path from a start node to a goal node using a cost function f(n) = g(n) + h(n). In the context of cities, g(n) is the path cost so far, and h(n) is the Haversine (great-circle) distance between the current city and the goal, which provides an admissible heuristic for real-world distances. A* is optimal and complete if the heuristic is admissible and consistent.
+// Explanation: This code finds the shortest path between two cities in a graph using the A* algorithm. The heuristic is the Haversine distance between cities, making the search more realistic for geographical data.
+
+<code>
+import networkx as nx
+from queue import PriorityQueue
+import math
+
+# Example user input for interactive mode:
+# Enter number of cities: 3
+# Enter city details (name latitude longitude):
+# A 0 0
+# B 0 1
+# C 1 1
+# Enter number of connections: 3
+# Enter connections (city1 city2 distance):
+# A B 1
+# B C 1
+# A C 2
+# Enter start city: A
+# Enter end city: C
+
+class CitiesDistance:
+    def __init__(self, cities=None, distances=None):
+        self.graph = nx.Graph()
+        
+        if cities is None or distances is None:
+            # Default example with some Indian cities
+            self.cities = {
+                'Mumbai': (19.0760, 72.8777),
+                'Delhi': (28.6139, 77.2090),
+                'Bangalore': (12.9716, 77.5946),
+                'Chennai': (13.0827, 80.2707),
+                'Kolkata': (22.5726, 88.3639)
+            }
+            
+            # Example distances in kilometers
+            self.distances = [
+                ('Mumbai', 'Delhi', 1427),
+                ('Mumbai', 'Bangalore', 981),
+                ('Delhi', 'Kolkata', 1305),
+                ('Bangalore', 'Chennai', 346),
+                ('Chennai', 'Kolkata', 1659),
+                ('Mumbai', 'Chennai', 1338),
+                ('Delhi', 'Bangalore', 2150)
+            ]
+        else:
+            self.cities = cities
+            self.distances = distances
+        
+        self._build_graph()
+        
+        # Dictionary to store g_scores
+        self.g_scores = {}
+    
+    def _build_graph(self):
+        # Add all cities to the graph
+        for city, coords in self.cities.items():
+            self.graph.add_node(city, pos=coords)
+        
+        # Add all distances as edges
+        for city1, city2, distance in self.distances:
+            self.graph.add_edge(city1, city2, weight=distance)
+    
+    def get_haversine_distance(self, city1, city2):
+        """Calculate the great circle distance between two cities using their coordinates."""
+        lat1, lon1 = self.cities[city1]
+        lat2, lon2 = self.cities[city2]
+        
+        # Convert to radians
+        lat1, lon1 = math.radians(lat1), math.radians(lon1)
+        lat2, lon2 = math.radians(lat2), math.radians(lon2)
+        
+        # Haversine formula
+        dlat = lat2 - lat1
+        dlon = lon2 - lon1
+        a = (math.sin(dlat/2)**2 + 
+             math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2)
+        c = 2 * math.asin(math.sqrt(a))
+        r = 6371  # Radius of Earth in kilometers
+        
+        return c * r
+    
+    def solve(self, start_city, end_city):
+        if start_city not in self.cities or end_city not in self.cities:
+            return None
+        
+        visited = set()
+        pq = PriorityQueue()
+        self.g_scores = {start_city: 0}
+        
+        # Priority queue items: (f_score, current_city, path, total_distance)
+        h_score = self.get_haversine_distance(start_city, end_city)
+        pq.put((h_score, start_city, [start_city], 0))
+        
+        while not pq.empty():
+            f_score, current_city, path, distance = pq.get()
+            
+            if current_city == end_city:
+                return path, distance
+            
+            if current_city in visited:
+                continue
+            
+            visited.add(current_city)
+            
+            for neighbor in self.graph.neighbors(current_city):
+                if neighbor not in visited:
+                    edge_distance = self.graph[current_city][neighbor]['weight']
+                    tentative_g_score = self.g_scores[current_city] + edge_distance
+                    
+                    if (neighbor not in self.g_scores or 
+                        tentative_g_score < self.g_scores[neighbor]):
+                        
+                        self.g_scores[neighbor] = tentative_g_score
+                        h_score = self.get_haversine_distance(neighbor, end_city)
+                        f_score = tentative_g_score + h_score
+                        new_path = path + [neighbor]
+                        pq.put((f_score, neighbor, new_path, tentative_g_score))
+        
+        return None
+
+def main():
+    # Example with user input
+    print("Enter number of cities:")
+    n = int(input())
+    
+    cities = {}
+    print("Enter city details (name latitude longitude):")
+    for _ in range(n):
+        name, lat, lon = input().strip().split()
+        cities[name] = (float(lat), float(lon))
+    
+    print("Enter number of connections:")
+    m = int(input())
+    
+    distances = []
+    print("Enter connections (city1 city2 distance):")
+    for _ in range(m):
+        city1, city2, dist = input().strip().split()
+        distances.append((city1, city2, float(dist)))
+    
+    router = CitiesDistance(cities, distances)
+    
+    print("Enter start city:")
+    start_city = input().strip()
+    print("Enter end city:")
+    end_city = input().strip()
+    
+    result = router.solve(start_city, end_city)
+    
+    if result:
+        path, distance = result
+        print("\nPath found!")
+        print("Route:", " -> ".join(path))
+        print(f"Total distance: {distance:.2f} km")
+    else:
+        print("\nNo path found!")
+
+// Code Name: Map Coloring Solver (Constraint Satisfaction)
+// Topic: Constraint Satisfaction Problems (CSP)
+// Theory: Map coloring is a classic CSP where each region is a variable, the domain is a set of colors, and constraints ensure that no two adjacent regions have the same color. The problem is solved by assigning colors to regions such that all constraints are satisfied, using backtracking and heuristics like MRV and LCV.
+// Explanation: This code solves the map coloring problem for a given set of regions and borders, using backtracking and heuristics to efficiently search for a valid coloring.
+
+<code>
+import networkx as nx
+from typing import Dict, List, Set
+
+# Example user input for interactive mode:
+# Enter number of regions: 3
+# Enter region names:
+# A
+# B
+# C
+# Enter number of borders: 3
+# Enter borders (region1 region2):
+# A B
+# B C
+# A C
+# Enter number of colors (or press Enter to use default colors):
+# (Press Enter)
+
+class MapColoringSolver:
+    def __init__(self, regions: List[str], borders: List[tuple], colors: List[str] = None):
+        self.regions = regions
+        self.borders = borders
+        self.colors = colors if colors else ['Red', 'Green', 'Blue', 'Yellow']
+        self.graph = nx.Graph()
+        self._build_graph()
+        
+    def _build_graph(self):
+        self.graph.add_nodes_from(self.regions)
+        self.graph.add_edges_from(self.borders)
+    
+    def _is_safe(self, region: str, color: str, coloring: Dict[str, str]) -> bool:
+        for neighbor in self.graph.neighbors(region):
+            if neighbor in coloring and coloring[neighbor] == color:
+                return False
+        return True
+    
+    def _get_unassigned_region(self, coloring: Dict[str, str]) -> str:
+        min_remaining = float('inf')
+        chosen_region = None
+        for region in self.regions:
+            if region not in coloring:
+                legal_colors = sum(1 for color in self.colors 
+                                 if self._is_safe(region, color, coloring))
+                if legal_colors < min_remaining:
+                    min_remaining = legal_colors
+                    chosen_region = region
+        return chosen_region
+    
+    def _get_ordered_colors(self, region: str, coloring: Dict[str, str]) -> List[str]:
+        color_scores = []
+        for color in self.colors:
+            if self._is_safe(region, color, coloring):
+                coloring[region] = color
+                score = 0
+                for neighbor in self.graph.neighbors(region):
+                    if neighbor not in coloring:
+                        score += sum(1 for c in self.colors 
+                                   if self._is_safe(neighbor, c, coloring))
+                color_scores.append((score, color))
+                del coloring[region]
+        return [color for score, color in sorted(color_scores, reverse=True)]
+    
+    def _solve(self, coloring: Dict[str, str]) -> Dict[str, str]:
+        if len(coloring) == len(self.regions):
+            return coloring
+        region = self._get_unassigned_region(coloring)
+        if not region:
+            return None
+        for color in self._get_ordered_colors(region, coloring):
+            if self._is_safe(region, color, coloring):
+                coloring[region] = color
+                result = self._solve(coloring)
+                if result:
+                    return result
+                del coloring[region]
+        return None
+    
+    def solve(self) -> Dict[str, str]:
+        return self._solve({})
+
+def print_solution(regions: List[str], solution: Dict[str, str]):
+    max_region_len = max(len(region) for region in regions)
+    max_color_len = max(len(color) for color in solution.values())
+    print("\nSolution:")
+    print("=" * (max_region_len + max_color_len + 7))
+    for region in sorted(regions):
+        print(f"{region:<{max_region_len}} | {solution[region]}")
+    print("=" * (max_region_len + max_color_len + 7))
+
+def main():
+    print("Enter number of regions:")
+    n = int(input())
+    print("Enter region names:")
+    regions = []
+    for _ in range(n):
+        regions.append(input().strip())
+    print("Enter number of borders:")
+    m = int(input())
+    print("Enter borders (region1 region2):")
+    borders = []
+    for _ in range(m):
+        r1, r2 = input().strip().split()
+        borders.append((r1, r2))
+    print("Enter number of colors (or press Enter to use default colors):")
+    colors_input = input().strip()
+    if colors_input:
+        print("Enter colors:")
+        colors = []
+        for _ in range(int(colors_input)):
+            colors.append(input().strip())
+    else:
+        colors = None
+    solver = MapColoringSolver(regions, borders, colors)
+    solution = solver.solve()
+    if solution:
+        print_solution(regions, solution)
+    else:
+        print("\nNo solution found!")
+
+if __name__ == "__main__":
+    main() 
+
+// Code Name: POS Tagger using NLTK and spaCy
+// Topic: Natural Language Processing (NLP) - Part-of-Speech Tagging
+// Theory: POS tagging assigns grammatical categories (noun, verb, adjective, etc.) to each word in a sentence. Statistical and rule-based taggers (like NLTK and spaCy) use pre-trained models to label words based on context and word features.
+// Explanation: This code tags each word in a user-provided sentence using either spaCy or NLTK, and explains each tag.
+// Example user input:
+// Enter text to analyze (or press Enter for default example): The quick brown fox jumps over the lazy dog.
+// Choose tagger:
+// 1. spaCy (more accurate, slower)
+// 2. NLTK (faster, less accurate)
+// Enter choice (1 or 2): 1
+
+<code>
+import nltk
+import spacy
+from typing import List, Tuple
+
+class POSTagger:
+    def __init__(self, use_spacy: bool = True):
+        self.use_spacy = use_spacy
+        if use_spacy:
+            try:
+                self.nlp = spacy.load('en_core_web_sm')
+            except OSError:
+                print("Downloading spaCy English model...")
+                spacy.cli.download('en_core_web_sm')
+                self.nlp = spacy.load('en_core_web_sm')
+        else:
+            try:
+                nltk.data.find('tokenizers/punkt')
+                nltk.data.find('taggers/averaged_perceptron_tagger')
+            except LookupError:
+                print("Downloading required NLTK data...")
+                nltk.download('punkt')
+                nltk.download('averaged_perceptron_tagger')
+
+    def tag_text(self, text: str) -> List[Tuple[str, str]]:
+        if self.use_spacy:
+            doc = self.nlp(text)
+            return [(token.text, token.pos_) for token in doc]
+        else:
+            tokens = nltk.word_tokenize(text)
+            return nltk.pos_tag(tokens)
+
+    def explain_tags(self, tagged_text: List[Tuple[str, str]]) -> List[Tuple[str, str, str]]:
+        tag_explanations = {
+            'ADJ': 'Adjective',
+            'ADP': 'Adposition (preposition or postposition)',
+            'ADV': 'Adverb',
+            'AUX': 'Auxiliary verb',
+            'CCONJ': 'Coordinating conjunction',
+            'DET': 'Determiner',
+            'INTJ': 'Interjection',
+            'NOUN': 'Noun',
+            'NUM': 'Numeral',
+            'PART': 'Particle',
+            'PRON': 'Pronoun',
+            'PROPN': 'Proper noun',
+            'PUNCT': 'Punctuation',
+            'SCONJ': 'Subordinating conjunction',
+            'SYM': 'Symbol',
+            'VERB': 'Verb',
+            'X': 'Other',
+            'CC': 'Coordinating conjunction',
+            'CD': 'Cardinal number',
+            'DT': 'Determiner',
+            'EX': 'Existential there',
+            'FW': 'Foreign word',
+            'IN': 'Preposition or subordinating conjunction',
+            'JJ': 'Adjective',
+            'JJR': 'Adjective, comparative',
+            'JJS': 'Adjective, superlative',
+            'LS': 'List item marker',
+            'MD': 'Modal',
+            'NN': 'Noun, singular or mass',
+            'NNS': 'Noun, plural',
+            'NNP': 'Proper noun, singular',
+            'NNPS': 'Proper noun, plural',
+            'PDT': 'Predeterminer',
+            'POS': 'Possessive ending',
+            'PRP': 'Personal pronoun',
+            'PRP$': 'Possessive pronoun',
+            'RB': 'Adverb',
+            'RBR': 'Adverb, comparative',
+            'RBS': 'Adverb, superlative',
+            'RP': 'Particle',
+            'TO': 'to',
+            'UH': 'Interjection',
+            'VB': 'Verb, base form',
+            'VBD': 'Verb, past tense',
+            'VBG': 'Verb, gerund or present participle',
+            'VBN': 'Verb, past participle',
+            'VBP': 'Verb, non-3rd person singular present',
+            'VBZ': 'Verb, 3rd person singular present',
+            'WDT': 'Wh-determiner',
+            'WP': 'Wh-pronoun',
+            'WP$': 'Possessive wh-pronoun',
+            'WRB': 'Wh-adverb'
+        }
+        return [(word, tag, tag_explanations.get(tag, 'Unknown tag')) 
+                for word, tag in tagged_text]
+
+def print_tagged_text(tagged_text: List[Tuple[str, str, str]]):
+    max_word_len = max(len(word) for word, _, _ in tagged_text)
+    max_tag_len = max(len(tag) for _, tag, _ in tagged_text)
+    print("\nPOS Tagging Results:")
+    print("=" * (max_word_len + max_tag_len + 50))
+    print(f"{'Word':<{max_word_len}} | {'Tag':<{max_tag_len}} | Explanation")
+    print("-" * (max_word_len + max_tag_len + 50))
+    for word, tag, explanation in tagged_text:
+        print(f"{word:<{max_word_len}} | {tag:<{max_tag_len}} | {explanation}")
+    print("=" * (max_word_len + max_tag_len + 50))
+
+def main():
+    print("Enter text to analyze (or press Enter for default example):")
+    text = input().strip()
+    if not text:
+        text = "The quick brown fox jumps over the lazy dog."
+        print(f"\nUsing default example: '{text}'")
+    print("\nChoose tagger:")
+    print("1. spaCy (more accurate, slower)")
+    print("2. NLTK (faster, less accurate)")
+    choice = input("Enter choice (1 or 2): ").strip()
+    use_spacy = choice != "2"
+    tagger = POSTagger(use_spacy)
+    tagged_text = tagger.tag_text(text)
+    explained_tags = tagger.explain_tags(tagged_text)
+    print_tagged_text(explained_tags)
+
+if __name__ == "__main__":
+    main() 
+
+// Code Name: Tic Tac Toe (Minimax AI)
+// Topic: Game AI - Minimax Algorithm
+// Theory: The Minimax algorithm is a recursive decision-making strategy used in two-player, turn-based games. It simulates all possible moves, assuming both players play optimally, and chooses the move that maximizes the AI's minimum gain (hence "minimax"). In Tic Tac Toe, this guarantees the AI will never lose if it plays first or responds optimally.
+// Explanation: This code implements a Tic Tac Toe game where the user plays against an AI using the Minimax algorithm. The AI always plays as 'X', the user as 'O'. The board is displayed after each move, and the user is prompted for input until the game ends.
+// Example user input:
+// Enter your move (1-9): 5
+// (Continue entering numbers 1-9 for your moves as prompted)
+// Would you like to play again? (y/n): n
+
+<code>
+class TicTacToe:
+    def __init__(self):
+        self.board = [[' ' for _ in range(3)] for _ in range(3)]
+        self.current_player = 'X'
+    def print_board(self):
+        print("\nCurrent Board:")
+        print("-------------")
+        for i, row in enumerate(self.board):
+            print("|", end=" ")
+            for j, cell in enumerate(row):
+                print(cell if cell != ' ' else str(i*3 + j + 1), end=" | ")
+            print("\n-------------")
+    def is_winner(self, player):
+        for row in self.board:
+            if all(cell == player for cell in row):
+                return True
+        for col in range(3):
+            if all(self.board[row][col] == player for row in range(3)):
+                return True
+        if all(self.board[i][i] == player for i in range(3)):
+            return True
+        if all(self.board[i][2-i] == player for i in range(3)):
+            return True
+        return False
+    def is_board_full(self):
+        return all(cell != ' ' for row in self.board for cell in row)
+    def get_empty_cells(self):
+        empty = []
+        for i in range(3):
+            for j in range(3):
+                if self.board[i][j] == ' ':
+                    empty.append((i, j))
+        return empty
+    def make_move(self, row, col, player):
+        if self.board[row][col] == ' ':
+            self.board[row][col] = player
+            return True
+        return False
+    def undo_move(self, row, col):
+        self.board[row][col] = ' '
+    def minimax(self, depth, is_maximizing):
+        if self.is_winner('X'):
+            return 1
+        if self.is_winner('O'):
+            return -1
+        if self.is_board_full():
+            return 0
+        if is_maximizing:
+            best_score = float('-inf')
+            for row, col in self.get_empty_cells():
+                self.make_move(row, col, 'X')
+                score = self.minimax(depth + 1, False)
+                self.undo_move(row, col)
+                best_score = max(score, best_score)
+            return best_score
+        else:
+            best_score = float('inf')
+            for row, col in self.get_empty_cells():
+                self.make_move(row, col, 'O')
+                score = self.minimax(depth + 1, True)
+                self.undo_move(row, col)
+                best_score = min(score, best_score)
+            return best_score
+    def get_best_move(self):
+        best_score = float('-inf')
+        best_move = None
+        for row, col in self.get_empty_cells():
+            self.make_move(row, col, 'X')
+            score = self.minimax(0, False)
+            self.undo_move(row, col)
+            if score > best_score:
+                best_score = score
+                best_move = (row, col)
+        return best_move
+    def play_game(self):
+        print("Welcome to Tic Tac Toe!")
+        print("You are O and the AI is X")
+        print("Positions are numbered from 1-9, left to right, top to bottom")
+        while True:
+            self.print_board()
+            print("\nAI's turn (X)...")
+            row, col = self.get_best_move()
+            self.make_move(row, col, 'X')
+            if self.is_winner('X'):
+                self.print_board()
+                print("\nAI wins!")
+                break
+            if self.is_board_full():
+                self.print_board()
+                print("\nIt's a tie!")
+                break
+            self.print_board()
+            while True:
+                try:
+                    pos = int(input("\nEnter your move (1-9): ")) - 1
+                    row, col = pos // 3, pos % 3
+                    if 0 <= row < 3 and 0 <= col < 3 and self.board[row][col] == ' ':
+                        self.make_move(row, col, 'O')
+                        break
+                    else:
+                        print("Invalid move! Try again.")
+                except (ValueError, IndexError):
+                    print("Invalid input! Please enter a number between 1 and 9.")
+            if self.is_winner('O'):
+                self.print_board()
+                print("\nCongratulations! You win!")
+                break
+            if self.is_board_full():
+                self.print_board()
+                print("\nIt's a tie!")
+                break
+
+def main():
+    while True:
+        game = TicTacToe()
+        game.play_game()
+        play_again = input("\nWould you like to play again? (y/n): ").lower()
+        if play_again != 'y':
+            print("\nThanks for playing!")
+            break
+
+if __name__ == "__main__":
+    main() 
+
+// Code Name: Crossword Solver (Constraint Satisfaction)
+// Topic: Constraint Satisfaction Problems (CSP)
+// Theory: Crossword solving as a CSP involves filling a grid with words such that all constraints are satisfied: words must fit in the available slots, intersecting letters must match, and only valid words are used. The problem is solved using backtracking and heuristics to efficiently search for a valid assignment.
+// Explanation: This code solves a user-defined crossword puzzle by filling the grid with user-provided words, ensuring all constraints are met. It uses backtracking and slot selection heuristics to find a solution if one exists.
+// Example user input:
+// Enter grid dimensions (height width): 5 6
+// Enter the 5x6 grid (use '#' for black squares, '-' for empty squares):
+// --#---
+// --#-#-
+// ------
+// -#--#-
+// --#---
+// Enter number of words: 7
+// Enter words:
+// CAT
+// DOG
+// RAT
+// MOUSE
+// HORSE
+// PIG
+// COW
+
+<code>
+class CrosswordSolver:
+    def __init__(self, grid, words):
+        self.grid = [list(row) for row in grid]
+        self.height = len(grid)
+        self.width = len(grid[0])
+        self.words = set(word.upper() for word in words)
+        self.solution = None
+        self.slots = self._find_slots()
+    def _find_slots(self):
+        slots = []
+        for i in range(self.height):
+            current_slot = []
+            for j in range(self.width):
+                if self.grid[i][j] != '#':
+                    current_slot.append((i, j))
+                elif current_slot and len(current_slot) > 1:
+                    slots.append(('H', current_slot[:]))
+                    current_slot = []
+                else:
+                    current_slot = []
+            if current_slot and len(current_slot) > 1:
+                slots.append(('H', current_slot))
+        for j in range(self.width):
+            current_slot = []
+            for i in range(self.height):
+                if self.grid[i][j] != '#':
+                    current_slot.append((i, j))
+                elif current_slot and len(current_slot) > 1:
+                    slots.append(('V', current_slot[:]))
+                    current_slot = []
+                else:
+                    current_slot = []
+            if current_slot and len(current_slot) > 1:
+                slots.append(('V', current_slot))
+        return slots
+    def _can_place_word(self, word, slot, assignment):
+        if len(word) != len(slot[1]):
+            return False
+        for i, (row, col) in enumerate(slot[1]):
+            existing = assignment.get((row, col))
+            if existing and existing != word[i]:
+                return False
+        return True
+    def _get_unassigned_slot(self, assignment):
+        min_remaining = float('inf')
+        best_slot = None
+        for slot in self.slots:
+            if all((row, col) in assignment for row, col in slot[1]):
+                continue
+            possible_words = sum(1 for word in self.words 
+                               if len(word) == len(slot[1]) and 
+                               self._can_place_word(word, slot, assignment))
+            if 0 < possible_words < min_remaining:
+                min_remaining = possible_words
+                best_slot = slot
+        return best_slot
+    def _assign_word(self, word, slot, assignment):
+        for i, (row, col) in enumerate(slot[1]):
+            assignment[(row, col)] = word[i]
+    def _solve(self, assignment):
+        if all(any((row, col) in assignment for row, col in slot[1]) 
+               for slot in self.slots):
+            self.solution = [row[:] for row in self.grid]
+            for (row, col), letter in assignment.items():
+                self.solution[row][col] = letter
+            return True
+        slot = self._get_unassigned_slot(assignment)
+        if not slot:
+            return False
+        for word in sorted(self.words):
+            if len(word) == len(slot[1]) and self._can_place_word(word, slot, assignment):
+                new_assignment = assignment.copy()
+                self._assign_word(word, slot, new_assignment)
+                if self._solve(new_assignment):
+                    return True
+        return False
+    def solve(self):
+        return self._solve({})
+def print_grid(grid):
+    for row in grid:
+        print(' '.join(row))
+def main():
+    print("Enter grid dimensions (height width):")
+    height, width = map(int, input().strip().split())
+    print(f"Enter the {height}x{width} grid (use '#' for black squares, '-' for empty squares):")
+    grid = []
+    for _ in range(height):
+        row = list(input().strip())
+        grid.append(row)
+    print("Enter number of words:")
+    n = int(input())
+    print("Enter words:")
+    words = []
+    for _ in range(n):
+        words.append(input().strip())
+    solver = CrosswordSolver(grid, words)
+    if solver.solve():
+        print("\nSolution found!")
+        print_grid(solver.solution)
+    else:
+        print("\nNo solution found!")
+if __name__ == "__main__":
+    main() 
+
+// Code Name: Cryptarithmetic Solver (Constraint Satisfaction)
+// Topic: Constraint Satisfaction Problems (CSP)
+// Theory: Cryptarithmetic puzzles are CSPs where each letter represents a unique digit. The constraints are that no two letters can have the same digit, and the arithmetic equation must be satisfied. The problem is solved by searching all possible assignments using backtracking and checking constraints at each step.
+// Explanation: This code solves a user-defined cryptarithmetic puzzle (e.g., SEND + MORE = MONEY) by assigning digits to letters such that the equation holds. It uses permutations to try all possible assignments and prints all valid solutions.
+// Example user input:
+// First word: SEND
+// Second word: MORE
+// Result word: MONEY
+
+<code>
+from itertools import permutations
+
+class CryptarithmeticSolver:
+    def __init__(self, word1, word2, result):
+        self.word1 = word1.upper()
+        self.word2 = word2.upper()
+        self.result = result.upper()
+        self.letters = list(set(word1.upper() + word2.upper() + result.upper()))
+        self.solutions = []
+    def is_valid_solution(self, letter_values):
+        mapping = dict(zip(self.letters, letter_values))
+        if (mapping[self.word1[0]] == 0 or 
+            mapping[self.word2[0]] == 0 or 
+            mapping[self.result[0]] == 0):
+            return False
+        num1 = sum(mapping[c] * (10 ** i) for i, c in enumerate(reversed(self.word1)))
+        num2 = sum(mapping[c] * (10 ** i) for i, c in enumerate(reversed(self.word2)))
+        result = sum(mapping[c] * (10 ** i) for i, c in enumerate(reversed(self.result)))
+        return num1 + num2 == result
+    def solve(self):
+        self.solutions = []
+        for perm in permutations(range(10), len(self.letters)):
+            if self.is_valid_solution(perm):
+                solution = dict(zip(self.letters, perm))
+                self.solutions.append(solution)
+        return self.solutions
+
+def print_solution(word1, word2, result, solution):
+    def word_to_num(word, mapping):
+        return ''.join(str(mapping[c]) for c in word)
+    num1 = int(word_to_num(word1, solution))
+    num2 = int(word_to_num(word2, solution))
+    res = int(word_to_num(result, solution))
+    width = max(len(str(num1)), len(str(num2)), len(str(res))) + 2
+    print("\nSolution:")
+    print(f"{word1:>{width}} = {num1}")
+    print(f"{word2:>{width}} = {num2}")
+    print("-" * width)
+    print(f"{result:>{width}} = {res}")
+    print("\nLetter mappings:")
+    for letter, value in sorted(solution.items()):
+        print(f"{letter} = {value}")
+
+def main():
+    print("Enter the cryptarithmetic puzzle (e.g., SEND + MORE = MONEY)")
+    print("First word:")
+    word1 = input().strip()
+    print("Second word:")
+    word2 = input().strip()
+    print("Result word:")
+    result = input().strip()
+    solver = CryptarithmeticSolver(word1, word2, result)
+    solutions = solver.solve()
+    if solutions:
+        print(f"\nFound {len(solutions)} solution(s)!")
+        for i, solution in enumerate(solutions, 1):
+            print(f"\nSolution {i}:")
+            print_solution(word1, word2, result, solution)
+    else:
+        print("\nNo solution found!")
+if __name__ == "__main__":
+    main() 
+
+// Code Name: AI Model Comparison (ChatGPT vs Gemini)
+// Topic: AI Model Evaluation and Comparison
+// Theory: Comparing AI models involves evaluating their responses to a set of test cases using multiple criteria such as accuracy, completeness, clarity, creativity, response time, and consistency. Automated scripts can call APIs for each model, collect responses, and score them using both quantitative and qualitative metrics. This approach provides a systematic way to benchmark and select the best model for a given application.
+// Explanation: This code compares the performance of ChatGPT and Gemini on a set of questions from different categories. It calls each model's API, evaluates responses on several criteria, and prints a summary of the results. API keys must be set in a .env file.
+// Example user input:
+// (No user input required; just run the script. Make sure to set OPENAI_API_KEY and GEMINI_API_KEY in your .env file.)
+
+<code>
+import requests
+import json
+import os
+from typing import List, Dict
+import time
+from dotenv import load_dotenv
+
+class AIModelComparison:
+    def __init__(self):
+        load_dotenv()
+        self.openai_api_key = os.getenv('OPENAI_API_KEY')
+        self.gemini_api_key = os.getenv('GEMINI_API_KEY')
+        if not self.openai_api_key or not self.gemini_api_key:
+            raise ValueError("Please set OPENAI_API_KEY and GEMINI_API_KEY in .env file")
+        self.test_cases = [
+            {
+                "category": "General Knowledge",
+                "questions": [
+                    "What is the capital of France?",
+                    "Who wrote 'Romeo and Juliet'?",
+                    "What is the chemical symbol for gold?"
+                ]
+            },
+            {
+                "category": "Mathematics",
+                "questions": [
+                    "What is the square root of 144?",
+                    "Solve the equation: 2x + 5 = 15",
+                    "What is the area of a circle with radius 5?"
+                ]
+            },
+            {
+                "category": "Programming",
+                "questions": [
+                    "What is a Python list comprehension?",
+                    "Explain the difference between '==' and '===' in JavaScript",
+                    "What is object-oriented programming?"
+                ]
+            },
+            {
+                "category": "Creative Writing",
+                "questions": [
+                    "Write a short story about a magical forest",
+                    "Create a poem about the ocean",
+                    "Describe a futuristic city"
+                ]
+            }
+        ]
+        self.evaluation_criteria = [
+            "Accuracy",
+            "Completeness",
+            "Clarity",
+            "Response Time",
+            "Creativity",
+            "Consistency"
+        ]
+    def call_chatgpt(self, prompt: str) -> Dict:
+        headers = {
+            'Authorization': f'Bearer {self.openai_api_key}',
+            'Content-Type': 'application/json'
+        }
+        data = {
+            'model': 'gpt-3.5-turbo',
+            'messages': [{'role': 'user', 'content': prompt}],
+            'temperature': 0.7
+        }
+        start_time = time.time()
+        response = requests.post(
+            'https://api.openai.com/v1/chat/completions',
+            headers=headers,
+            json=data
+        )
+        end_time = time.time()
+        if response.status_code == 200:
+            return {
+                'text': response.json()['choices'][0]['message']['content'],
+                'time': end_time - start_time
+            }
+        else:
+            return {
+                'text': f"Error: {response.status_code}",
+                'time': end_time - start_time
+            }
+    def call_gemini(self, prompt: str) -> Dict:
+        headers = {
+            'Content-Type': 'application/json'
+        }
+        data = {
+            'contents': [{'parts': [{'text': prompt}]}]
+        }
+        start_time = time.time()
+        response = requests.post(
+            f'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={self.gemini_api_key}',
+            headers=headers,
+            json=data
+        )
+        end_time = time.time()
+        if response.status_code == 200:
+            return {
+                'text': response.json()['candidates'][0]['content']['parts'][0]['text'],
+                'time': end_time - start_time
+            }
+        else:
+            return {
+                'text': f"Error: {response.status_code}",
+                'time': end_time - start_time
+            }
+    def evaluate_response(self, response: Dict, criteria: str) -> float:
+        if 'Error' in response['text']:
+            return 0.0
+        score = 0.0
+        text = response['text'].lower()
+        if criteria == "Response Time":
+            score = max(1.0, 5.0 - response['time'])
+        elif criteria == "Completeness":
+            length = len(text.split())
+            score = min(5.0, length / 50)
+        elif criteria == "Clarity":
+            words = text.split()
+            avg_word_length = sum(len(word) for word in words) / len(words)
+            score = 5.0 if 4 <= avg_word_length <= 7 else 3.0
+        elif criteria == "Consistency":
+            score = 4.0
+        elif criteria == "Creativity":
+            unique_words = len(set(text.split()))
+            total_words = len(text.split())
+            score = min(5.0, (unique_words / total_words) * 10)
+        else:
+            score = 4.0
+        return score
+    def run_comparison(self) -> Dict:
+        results = {
+            'ChatGPT': {criteria: [] for criteria in self.evaluation_criteria},
+            'Gemini': {criteria: [] for criteria in self.evaluation_criteria}
+        }
+        for category in self.test_cases:
+            print(f"\nTesting category: {category['category']}")
+            for question in category['questions']:
+                print(f"\nQuestion: {question}")
+                chatgpt_response = self.call_chatgpt(question)
+                gemini_response = self.call_gemini(question)
+                print("\nChatGPT response:", chatgpt_response['text'][:100] + "...")
+                print("Response time:", f"{chatgpt_response['time']:.2f}s")
+                print("\nGemini response:", gemini_response['text'][:100] + "...")
+                print("Response time:", f"{gemini_response['time']:.2f}s")
+                for criteria in self.evaluation_criteria:
+                    chatgpt_score = self.evaluate_response(chatgpt_response, criteria)
+                    gemini_score = self.evaluate_response(gemini_response, criteria)
+                    results['ChatGPT'][criteria].append(chatgpt_score)
+                    results['Gemini'][criteria].append(gemini_score)
+        return results
+    def print_results(self, results: Dict):
+        print("\n" + "="*50)
+        print("COMPARISON RESULTS")
+        print("="*50)
+        for criteria in self.evaluation_criteria:
+            print(f"\n{criteria}:")
+            chatgpt_avg = sum(results['ChatGPT'][criteria]) / len(results['ChatGPT'][criteria])
+            gemini_avg = sum(results['Gemini'][criteria]) / len(results['Gemini'][criteria])
+            print(f"ChatGPT: {chatgpt_avg:.2f}/5.0")
+            print(f"Gemini:  {gemini_avg:.2f}/5.0")
+            if chatgpt_avg > gemini_avg:
+                print("Winner: ChatGPT")
+            elif gemini_avg > chatgpt_avg:
+                print("Winner: Gemini")
+            else:
+                print("Tie")
+        chatgpt_total = sum(sum(scores) for scores in results['ChatGPT'].values())
+        gemini_total = sum(sum(scores) for scores in results['Gemini'].values())
+        print("\n" + "="*50)
+        print("OVERALL RESULTS")
+        print("="*50)
+        print(f"ChatGPT total score: {chatgpt_total:.2f}")
+        print(f"Gemini total score:  {gemini_total:.2f}")
+        print(f"Overall winner: {'ChatGPT' if chatgpt_total > gemini_total else 'Gemini'}")
+def main():
+    print("Starting AI Model Comparison...")
+    print("Note: This script requires API keys for both OpenAI (ChatGPT) and Google (Gemini)")
+    print("Please ensure you have set these in your .env file:")
+    print("OPENAI_API_KEY=your_openai_key")
+    print("GEMINI_API_KEY=your_gemini_key")
+    try:
+        comparator = AIModelComparison()
+        results = comparator.run_comparison()
+        comparator.print_results(results)
+    except ValueError as e:
+        print(f"Error: {e}")
+        print("Please set up your API keys and try again.")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+if __name__ == "__main__":
+    main() 
+
+// Code Name: Similarity Scorer (NLP)
+// Topic: Natural Language Processing (NLP) - Text Similarity
+// Theory: Text similarity measures how alike two pieces of text are, using metrics such as vector-based similarity (spaCy), semantic similarity (WordNet), and set-based similarity (Jaccard). Combining these methods provides a robust assessment of both surface-level and deep semantic similarity. Such techniques are essential for tasks like information retrieval, paraphrase detection, and semantic search.
+// Explanation: This code compares two user-provided texts using three methods: spaCy's vector similarity, WordNet-based semantic similarity, and Jaccard similarity. It outputs each score and a weighted average, providing a comprehensive similarity analysis.
+// Example user input:
+// Text 1 (or press Enter for default example): The quick brown fox jumps over the lazy dog.
+// Text 2 (or press Enter for default example): A fast brown fox leaps across a sleepy canine.
+
+<code>
+import spacy
+import numpy as np
+from typing import List, Tuple, Dict
+from nltk.corpus import wordnet
+from nltk.tokenize import word_tokenize
+from nltk.corpus import stopwords
+import nltk
+
+class SimilarityScorer:
+    def __init__(self):
+        try:
+            nltk.data.find('corpora/wordnet')
+            nltk.data.find('corpora/stopwords')
+        except LookupError:
+            print("Downloading required NLTK data...")
+            nltk.download('wordnet')
+            nltk.download('stopwords')
+        try:
+            self.nlp = spacy.load('en_core_web_sm')
+        except OSError:
+            print("Downloading spaCy English model...")
+            spacy.cli.download('en_core_web_sm')
+            self.nlp = spacy.load('en_core_web_sm')
+        self.stop_words = set(stopwords.words('english'))
+
+    def preprocess_text(self, text: str) -> List[str]:
+        tokens = word_tokenize(text.lower())
+        tokens = [token for token in tokens if token not in self.stop_words and token.isalpha()]
+        return tokens
+
+    def get_wordnet_similarity(self, word1: str, word2: str) -> float:
+        synsets1 = wordnet.synsets(word1)
+        synsets2 = wordnet.synsets(word2)
+        if not synsets1 or not synsets2:
+            return 0.0
+        max_sim = 0.0
+        for syn1 in synsets1:
+            for syn2 in synsets2:
+                sim = syn1.path_similarity(syn2)
+                if sim and sim > max_sim:
+                    max_sim = sim
+        return max_sim
+
+    def get_spacy_similarity(self, text1: str, text2: str) -> float:
+        doc1 = self.nlp(text1)
+        doc2 = self.nlp(text2)
+        if not doc1.vector_norm or not doc2.vector_norm:
+            return 0.0
+        return doc1.similarity(doc2)
+
+    def get_jaccard_similarity(self, text1: str, text2: str) -> float:
+        tokens1 = set(self.preprocess_text(text1))
+        tokens2 = set(self.preprocess_text(text2))
+        intersection = len(tokens1.intersection(tokens2))
+        union = len(tokens1.union(tokens2))
+        return intersection / union if union > 0 else 0.0
+
+    def get_semantic_similarity(self, text1: str, text2: str) -> Dict[str, float]:
+        spacy_sim = self.get_spacy_similarity(text1, text2)
+        jaccard_sim = self.get_jaccard_similarity(text1, text2)
+        tokens1 = self.preprocess_text(text1)
+        tokens2 = self.preprocess_text(text2)
+        wordnet_sims = []
+        for word1 in tokens1:
+            word_sims = []
+            for word2 in tokens2:
+                sim = self.get_wordnet_similarity(word1, word2)
+                word_sims.append(sim)
+            if word_sims:
+                wordnet_sims.append(max(word_sims))
+        wordnet_sim = np.mean(wordnet_sims) if wordnet_sims else 0.0
+        weights = {'spacy': 0.4, 'wordnet': 0.4, 'jaccard': 0.2}
+        weighted_avg = (spacy_sim * weights['spacy'] + 
+                       wordnet_sim * weights['wordnet'] + 
+                       jaccard_sim * weights['jaccard'])
+        return {
+            'spacy_similarity': spacy_sim,
+            'wordnet_similarity': wordnet_sim,
+            'jaccard_similarity': jaccard_sim,
+            'weighted_average': weighted_avg
+        }
+
+def print_similarity_scores(text1: str, text2: str, scores: Dict[str, float]):
+    print("\nText Similarity Analysis")
+    print("=" * 50)
+    print("Text 1:", text1)
+    print("Text 2:", text2)
+    print("-" * 50)
+    print("Similarity Scores:")
+    for method, score in scores.items():
+        method_name = method.replace('_', ' ').title()
+        print(f"{method_name:20}: {score:.4f}")
+    print("=" * 50)
+
+def main():
+    print("Enter two texts to compare:")
+    print("\nText 1 (or press Enter for default example):")
+    text1 = input().strip()
+    print("Text 2 (or press Enter for default example):")
+    text2 = input().strip()
+    if not text1 or not text2:
+        text1 = "The quick brown fox jumps over the lazy dog."
+        text2 = "A fast brown fox leaps across a sleepy canine."
+        print(f"\nUsing default examples:")
+        print(f"Text 1: '{text1}'")
+        print(f"Text 2: '{text2}'")
+    scorer = SimilarityScorer()
+    scores = scorer.get_semantic_similarity(text1, text2)
+    print_similarity_scores(text1, text2, scores)
+
+if __name__ == "__main__":
+    main() 
+
+// Code Name: Spell Checker (NLP)
+// Topic: Natural Language Processing (NLP) - Spell Checking
+// Theory: Spell checking involves detecting and correcting misspelled words in text. Modern spell checkers use a combination of dictionary lookup, edit distance (such as Levenshtein distance), and word frequency from large corpora to suggest the most probable corrections. Candidate corrections are ranked by likelihood, and confidence scores can be provided based on edit distance and word probability.
+// Explanation: This code checks the spelling of each word in a user-provided text, suggests corrections, and provides a confidence score for each suggestion. It uses NLTK corpora for vocabulary and word frequency, and edit distance for candidate generation.
+// Example user input:
+// Enter text to check spelling (or press Enter for default example): This is a sampel text with misspeled words and typoss.
+
+<code>
+import re
+from collections import Counter
+import nltk
+from nltk.corpus import words, brown
+from typing import List, Dict
+import string
+import numpy as np
+
+class SpellChecker:
+    def __init__(self):
+        try:
+            nltk.data.find('corpora/words')
+            nltk.data.find('corpora/brown')
+        except LookupError:
+            print("Downloading required NLTK data...")
+            nltk.download('words')
+            nltk.download('brown')
+        self.words = set(words.words())
+        self.word_freq = Counter(word.lower() for word in brown.words())
+        common_words = {'python', 'javascript', 'programming', 'developer', 'code'}
+        self.words.update(common_words)
+        self.words_lower = {word.lower() for word in self.words}
+    def _tokenize(self, text: str) -> List[str]:
+        words = re.findall(r'\b\w+\b', text.lower())
+        return words
+    def _get_word_probability(self, word: str) -> float:
+        total_words = sum(self.word_freq.values())
+        return self.word_freq[word.lower()] / total_words if total_words > 0 else 0
+    def _get_edit_distance(self, s1: str, s2: str) -> int:
+        if len(s1) < len(s2):
+            return self._get_edit_distance(s2, s1)
+        if len(s2) == 0:
+            return len(s1)
+        previous_row = range(len(s2) + 1)
+        for i, c1 in enumerate(s1):
+            current_row = [i + 1]
+            for j, c2 in enumerate(s2):
+                insertions = previous_row[j + 1] + 1
+                deletions = current_row[j] + 1
+                substitutions = previous_row[j] + (c1 != c2)
+                current_row.append(min(insertions, deletions, substitutions))
+            previous_row = current_row
+        return previous_row[-1]
+    def _get_candidates(self, word: str) -> List[str]:
+        letters = string.ascii_lowercase
+        splits = [(word[:i], word[i:]) for i in range(len(word) + 1)]
+        deletes = [L + R[1:] for L, R in splits if R]
+        transposes = [L + R[1] + R[0] + R[2:] for L, R in splits if len(R) > 1]
+        replaces = [L + c + R[1:] for L, R in splits if R for c in letters]
+        inserts = [L + c + R for L, R in splits for c in letters]
+        all_edits = set(deletes + transposes + replaces + inserts)
+        candidates = [word for word in all_edits if word.lower() in self.words_lower]
+        if word.lower() in self.words_lower:
+            candidates.append(word)
+        return candidates
+    def check_word(self, word: str) -> Dict[str, any]:
+        word_lower = word.lower()
+        if word_lower in self.words_lower:
+            return {
+                'word': word,
+                'correct': True,
+                'suggestions': [],
+                'confidence': 1.0
+            }
+        candidates = self._get_candidates(word_lower)
+        if not candidates:
+            return {
+                'word': word,
+                'correct': False,
+                'suggestions': [],
+                'confidence': 0.0
+            }
+        scored_candidates = []
+        for candidate in candidates:
+            edit_dist = self._get_edit_distance(word_lower, candidate.lower())
+            probability = self._get_word_probability(candidate)
+            score = edit_dist / (probability + 0.1)
+            scored_candidates.append((candidate, score))
+        scored_candidates.sort(key=lambda x: x[1])
+        best_score = scored_candidates[0][1]
+        confidence = 1.0 / (1.0 + best_score)
+        return {
+            'word': word,
+            'correct': False,
+            'suggestions': [c[0] for c in scored_candidates[:5]],
+            'confidence': confidence
+        }
+    def check_text(self, text: str) -> List[Dict[str, any]]:
+        words = self._tokenize(text)
+        return [self.check_word(word) for word in words]
+
+def print_spell_check_results(text: str, results: List[Dict[str, any]]):
+    print("\nSpell Check Results")
+    print("=" * 60)
+    print("Original text:", text)
+    print("-" * 60)
+    has_errors = False
+    for result in results:
+        if not result['correct']:
+            has_errors = True
+            print(f"\nWord: {result['word']}")
+            print(f"Suggestions: {', '.join(result['suggestions']) if result['suggestions'] else 'No suggestions'}")
+            print(f"Confidence: {result['confidence']:.2%}")
+    if not has_errors:
+        print("No spelling errors found!")
+    print("=" * 60)
+
+def main():
+    print("Enter text to check spelling (or press Enter for default example):")
+    text = input().strip()
+    if not text:
+        text = "This is a sampel text with misspeled words and typoss."
+        print(f"\nUsing default example: '{text}'")
+    checker = SpellChecker()
+    results = checker.check_text(text)
+    print_spell_check_results(text, results)
+
+if __name__ == "__main__":
+    main() 
+
+
+
+//non ai tic tac toe:
+    #tic tac toe,nqueens(4) and magic square
+import random
+def strike(text):
+    return '\u0336'.join([u'\u0336{}'.format(c) for c in text])
+x1=99
+x2=99
+x3=99
+y1=99
+y2=99
+y3=99
+
+global a
+w, h = 4,4
+a = [[9 for x in range(w)] for y in range(h)] 
+end=0
+z1=0
+z2=0
+z3=0
+z4=0
+z5=0
+z6=0
+z7=0
+z8=0
+q2=0
+q3=0
+q1=0
+q4=0
+q5=0
+q6=0
+q7=0
+q8=0
+def check_win():
+    global z1,z2,z3,z4,z5,z6,z7,z8,q1,q2,q3,q4,q5,q6,q7,q8,x1,x2,x3,y1,y2,y3,end,a
+
+    for i in range (3):
+        for j in range(3):
+            if(a[i][j]==2 ):
+                z1=i-1
+                z2=j-1
+                z3=i+1
+                z4=j+1
+                z5=i-1
+                z6=j+1
+                z7=i+1
+                z8=j-1
+            else:
+                q1=i-1
+                q2=j-1
+                q3=i+1
+                q4=j+1
+                q5=i-1
+                q6=j+1
+                q7=i+1
+                q8=j-1
+            for h in range(4):
+                checkh1=0
+                checkh2=0
+                checkv1=0
+                checkv2=0
+                for y in range(4):
+                    if(a[h][y]==2):
+                        checkh2=1
+                    else:
+                        checkh2=0
+                    if(a[y][h]==2):
+                        checkv2=1
+                    else:
+                        checkv2=0
+                    if(a[h][y]==1):
+                        checkh1=1
+                    else:
+                        checkh1=0
+                    if(a[y][h]==1):
+                        checkv1=1
+                    else:
+                        checkv1=0     
+                if(checkh1==1):
+                    x1=y-2
+                    x2=y-2
+                    x3=y-2
+                    y1=0
+                    y2=1
+                    y3=2
+                    print("Player 1 won horizontal!!")
+                    end=1
+                    win()
+                    return
+                elif(checkh2==1):
+                    x1=y-2
+                    x2=y-2
+                    x3=y-2
+                    y1=0
+                    y2=1
+                    y3=2
+                    print("Player 2 won horziontal!!")
+                    end=1
+                    win()
+                    return
+                elif(checkv1==1):
+                    x1=0
+                    x2=1
+                    x3=2
+                    y1=y-2
+                    y2=y-2
+                    y3=y-2
+                    print("Player 1 won vertical !!")
+                    end=1
+                    win()
+                    return
+                elif(checkv2==1):
+                    x1=0
+                    x2=1
+                    x3=2
+                    y1=y-2
+                    y2=y-2
+                    y3=y-2
+                    print("Player 2 won vertical!!")
+                    end=1
+                    win()
+                    return
+            if(a[z1][z2] and a[z1][z2]==2 and a[z3][z4]==2 and a[i][j]==2):
+                x1=z1
+                x2=z3
+                x3=i
+                y1=z2
+                y2=z4
+                y3=j
+                print(strike("player2 wins diagonal"))
+                end=1
+                win()
+                return
+            elif(a[z5][z6] and a[z5][z6]==2 and a[z7][z8]==2 and a[i][j]==2):
+                x1=z5
+                x2=z7
+                x3=i
+                y1=z6
+                y2=z8
+                y3=j
+                print(strike("player2 wins diagonal"))
+                end=1
+                win()
+                return
+            elif(a[q1][q2] and a[q1][q2]==1 and a[q3][q4]==1 and a[i][j]==1):
+                x1=q1
+                x2=q3
+                x3=i
+                y1=q2
+                y2=q4
+                y3=j
+                print(strike("player1 wins diagonal"))
+                end=1
+                win()
+                return
+            elif(a[q5][q6] and a[q5][q6]==1 and a[q7][q8]==1 and a[i][j]==1):
+                x1=q5
+                x2=q7
+                x3=i
+                y1=q6
+                y2=q8
+                y3=j
+                print(strike("player1 wins diagonal"))
+                end=1
+                win()
+                return
+
+done=0    
+def win():
+    global z1,z2,z3,z4,q1,q2,q3,q4,x1,x2,x3,y1,y2,y3,end,a,done
+    #print(x1,y1,x2,y2,x3,y3)
+    
+    if(end!=1):
+        done=2
+    if(done!=1):
+        for i in range(3):
+            for j in range(3):
+                if(((i==x1 and j==y1) or (i==x2 and j==y2) or (i==x3 and j==y3 )) and end!=0 ):
+                    if(a[i][j]==2):
+                        print(strike(" x"),end="")
+                    elif(a[i][j]==1):
+                        print(strike(" y"),end="")
+                else:
+                    if(a[i][j]==2):
+                        print(" x ",end="")
+                    elif(a[i][j]==1):
+                        print(" y ",end="")
+                    else:
+                        print(" - ",end="")
+
+            print("")
+    if(end==1):
+        done=1
+
+global won
+
+print("Player 1 is X\nPlayer 2 is O")
+p1=0
+p2=0
+claim=1
+print("Toss")
+print("Player 1 choose \n1:Tails\n2:Heads")
+toss=int(input())
+if((random.randint(1,2)==toss) ):
+    print("Player 1 wins")
+    won=1;
+else:
+    print("PLayer 2 wins")
+    won=2
+
+while(end==0):
+    if(won==1 and claim!=99):
+        print("Player1's turn")
+        claim=0
+    elif(won==2 and claim!=99):
+        print("Player2's turn")
+        claim=0
+    elif(p1==0):
+        print("Player1's turn")
+    elif(p2==0):
+        print("Player2's turn")
+    print("Enter Co ordinates separated by space:")
+    if(won==1 and claim==0):
+        e=int(input())-1
+        r=int(input())-1
+        a[e][r]=2;
+        p1=1;
+        p2=0;
+        claim=99
+    elif(won==2 and claim==0):
+        e=int(input())-1
+        r=int(input())-1
+        a[e][r]=1;
+        p1=0;
+        p2=1;
+        claim=99
+    elif(p1==0):
+        e=int(input())-1
+        r=int(input())-1
+        a[e][r]=2;
+        p1=1;
+        p2=0;
+    elif(p2==0):
+        e=int(input())-1
+        r=int(input())-1
+        a[e][r]=1;
+        p1=0;
+        p2=1;
+    
+    check_win()
+    win()
+
+
+//4 queens n queens queen
+def print_solution(board, n):
+    """Prints the chessboard with 'Q' for queens and '.' for empty spaces."""
+    for row in board:
+        line = ""
+        for cell in row:
+            line += "Q " if cell else ". "
+        print(line)
+    print()
+
+def is_safe(board, row, col, n):
+    """Checks if placing a queen at board[row][col] is safe."""
+    for i in range(col):
+        if board[row][i]:
+            return False
+
+    for i, j in zip(range(row, -1, -1), range(col, -1, -1)):
+        if board[i][j]:
+            return False
+
+    for i, j in zip(range(row, n), range(col, -1, -1)):
+        if board[i][j]:
+            return False
+
+    return True
+
+def solve_n_queens_util(board, col, n):
+    """Utility function to solve N-Queens problem using backtracking."""
+    if col >= n:
+        print_solution(board, n)
+        return True
+
+    res = False
+    for i in range(n):
+        if is_safe(board, i, col, n):
+            board[i][col] = True
+            res = solve_n_queens_util(board, col + 1, n) or res
+            board[i][col] = False
+    return res
+
+def solve_n_queens(n):
+    """Main function to initiate solving the N-Queens problem."""
+    board = [[False for _ in range(n)] for _ in range(n)]
+    if not solve_n_queens_util(board, 0, n):
+        print("No solution exists.")
+
+n = int(input("Enter the size of the board: "))
+if n < 1:
+    print("Board size must be at least 1.")
+else:
+    solve_n_queens(n)
+
+//magic square 3*3
+import random
+
+def print_grid(grid):
+    for row in grid:
+        print(" ".join([str(cell) if cell != 0 else "-" for cell in row]))
+    print()
+
+def is_magic_square(grid):
+    target_sum = 15
+    nums = [grid[i][j] for i in range(3) for j in range(3) if grid[i][j] != 0]
+
+    if len(nums) != len(set(nums)) or any(num < 1 or num > 9 for num in nums):
+        return False
+
+    for row in grid:
+        if sum(row) != target_sum:
+            return False
+
+    for col in range(3):
+        if sum(grid[row][col] for row in range(3)) != target_sum:
+            return False
+
+    if sum(grid[i][i] for i in range(3)) != target_sum:
+        return False
+
+    if sum(grid[i][2 - i] for i in range(3)) != target_sum:
+        return False
+
+    return True
+
+def check_win(grid):
+    if is_magic_square(grid):
+        print("\nCongratulations! The grid forms a magic square:")
+        print_grid(grid)
+        return True
+    return False
+
+def magic_square_game():
+    grid = [[0 for _ in range(3)] for _ in range(3)]
+    available_numbers = set(range(1, 10))
+    player_turn = random.randint(1, 2)
+
+    print("Welcome to the 3x3 Magic Square Game!")
+    print("Players take turns to enter numbers from 1 to 9 into the grid.")
+    print("The goal is to create a magic square where the sums of all rows, columns, and diagonals are 15.")
+    print("Each number can only be used once. Let's begin!\n")
+
+    print("Player 1 is X\nPlayer 2 is O")
+    print("Player {} starts.\n".format(player_turn))
+
+    while True:
+        print("Current Grid:")
+        print_grid(grid)
+        
+        if(not available_numbers):
+            print("You lost!!")
+            return
+        print("Available Numbers:", available_numbers)
+        try:
+            print("Player {}'s turn. Enter row, column, and number (separated by spaces):".format(player_turn))
+            row, col, num = map(int, input().split())
+
+            if not (0 <= row < 3 and 0 <= col < 3):
+                print("Invalid position! Row and column must be between 0 and 2.")
+                continue
+
+            if grid[row][col] != 0:
+                print("Cell is already occupied! Choose another cell.")
+                continue
+
+            if num not in available_numbers:
+                print("Number not available or already used! Choose another number.")
+                continue
+
+            grid[row][col] = num
+            available_numbers.remove(num)
+
+            if check_win(grid):
+                break
+
+            player_turn = 2 if player_turn == 1 else 1
+
+        except ValueError:
+            print("Invalid input! Please enter row, column, and number as integers separated by spaces.")
+
+    print("Game Over. Thanks for playing!")
+
+magic_square_game()
+
+//water jug using bfs and dfs
+
+from collections import deque
+
+def dfs(jug1, jug2, target, x, y, visited):
+    if (x, y) in visited:
+        return
+    visited.add((x, y))
+    print(f"Visited: ({x}, {y})")
+
+    if x == target or y == target:
+        print(f"Solution found using DFS: ({x}, {y})")
+        return
+
+    next_states = [
+        (jug1, y), (x, jug2), (0, y), (x, 0),
+        (x - min(x, jug2 - y), y + min(x, jug2 - y)),
+        (x + min(y, jug1 - x), y - min(y, jug1 - x))
+    ]
+
+    for nx, ny in next_states:
+        dfs(jug1, jug2, target, nx, ny, visited)
+
+def bfs(jug1, jug2, target):
+    queue = deque([(0, 0)])
+    visited = set(queue)
+
+    while queue:
+        x, y = queue.popleft()
+        print(f"Visited: ({x}, {y})")
+
+        if x == target or y == target:
+            print(f"Solution found using BFS: ({x}, {y})")
+            return
+
+        next_states = [
+            (jug1, y), (x, jug2), (0, y), (x, 0),
+            (x - min(x, jug2 - y), y + min(x, jug2 - y)),
+            (x + min(y, jug1 - x), y - min(y, jug1 - x))
+        ]
+
+        for state in next_states:
+            if state not in visited:
+                queue.append(state)
+                visited.add(state)
+
+    print("No solution found using BFS")
+
+jug1, jug2, target = 5, 3, 2
+
+jug1=int(input(("Enter jug 1 capacity:")))
+
+jug2=int(input(("Enter jug 2 capacity:")))
+
+target=int(input(("Enter target capacity to measure:")))
+print("Using DFS:")
+dfs(jug1, jug2, target, 0, 0, set())
+
+print("\nUsing BFS:")
+bfs(jug1, jug2, target)
+
+
